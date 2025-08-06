@@ -1,0 +1,46 @@
+name: Comparar Fechas Voluntariado
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # ⏰ Se ejecuta todos los días a las 10:00 p.m. hora Perú (UTC-5 = 03:00 UTC)
+  workflow_dispatch:      # 🔘 Permite ejecución manual
+
+jobs:
+  procesar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: 📦 Instalar Python y dependencias
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Instalar librerías necesarias
+        run: |
+          pip install pandas openpyxl
+
+      - name: 📁 Crear carpeta data/
+        run: mkdir data
+
+      - name: 📥 Descargar archivos desde OneDrive con rclone
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+        run: |
+          echo "$RCLONE_CONF" > rclone.conf
+          rclone --config rclone.conf copy "ondri_a.formularios:a.formularios/Forms Cierre de Voluntariado.xlsx" data/
+          rclone --config rclone.conf copy "ondri_a.formularios:a.formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
+
+      - name: ▶️ Ejecutar script de comparación
+        run: python TEST_MARGE_FECHAS.py
+
+      - name: 📤 Subir resultado a OneDrive
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+        run: |
+          echo "$RCLONE_CONF" > rclone.conf
+          FECHA=$(date +'%Y-%m-%d')
+          ARCHIVO="resultado_observaciones_$FECHA.xlsx"
+          rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.formularios/" --create-empty-src-dirs
