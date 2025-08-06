@@ -34,8 +34,8 @@ jobs:
           RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
         run: |
           echo "$RCLONE_CONF" > rclone.conf
-          rclone --config rclone.conf copy "ondri_a.formularios:a.formularios/Forms Cierre de Voluntariado.xlsx" data/
-          rclone --config rclone.conf copy "ondri_a.formularios:a.formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
+          rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
+          rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
 
       - name: ▶️ Ejecutar script de comparación
         run: python TEST_MARGE_FECHAS.py
@@ -47,4 +47,4 @@ jobs:
           echo "$RCLONE_CONF" > rclone.conf
           FECHA=$(date +'%Y-%m-%d')
           ARCHIVO="resultado_observaciones_$FECHA.xlsx"
-          rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.formularios/" --create-empty-src-dirs
+          rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --create-empty-src-dirs
