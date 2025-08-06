@@ -46,8 +46,6 @@ def comparar_fechas(row):
 
 # ➕ Crear columna de observaciones
 df_merged["OBS_FECHA_INICIO"] = df_merged.apply(comparar_fechas, axis=1)
-display(df_merged)
-
 
 # Guardar archivo con resultados
 fecha_hoy = datetime.today().strftime('%Y-%m-%d')
