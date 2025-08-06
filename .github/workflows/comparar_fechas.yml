@@ -31,7 +31,7 @@ jobs:
 
       - name: 📥 Descargar archivos desde OneDrive con rclone
         env:
-          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE  }}
         run: |
           echo "$RCLONE_CONF" > rclone.conf
           rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
@@ -42,7 +42,7 @@ jobs:
 
       - name: 📤 Subir resultado a OneDrive
         env:
-          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE  }}
         run: |
           echo "$RCLONE_CONF" > rclone.conf
           FECHA=$(date +'%Y-%m-%d')
