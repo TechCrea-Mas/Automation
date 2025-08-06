@@ -25,6 +25,10 @@ jobs:
       - name: 📁 Crear carpeta data/
         run: mkdir data
 
+      - name: 🔧 Instalar rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
       - name: 📥 Descargar archivos desde OneDrive con rclone
         env:
           RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
