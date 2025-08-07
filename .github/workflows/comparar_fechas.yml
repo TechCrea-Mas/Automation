@@ -1,9 +1,9 @@
 name: Comparar Fechas Voluntariado
 
 on:
-  schedule:
-    - cron: '0 3 * * *'   # ⏰ Se ejecuta todos los días a las 10:00 p.m. hora Perú (UTC-5 = 03:00 UTC)
-  workflow_dispatch:      # 🔘 Permite ejecución manual
+#  schedule:
+#    - cron: '0 3 * * *'   # ⏰ Se ejecuta todos los días a las 10:00 p.m. hora Perú (UTC-5 = 03:00 UTC)
+    workflow_dispatch:      # 🔘 Permite ejecución manual
 
 jobs:
   procesar:
