@@ -35,9 +35,9 @@ jobs:
     # 6️⃣ Descargar archivos desde OneDrive
     - name: 📥 Descargar archivos desde OneDrive
       env:
-        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+        RCLONE_CONFIG: ${{ secrets.AUTOMATE_RCLONE}}
       run: |
-        echo "$RCLONE_CONFIG" > rclone.conf
+        echo "$AUTOMATE_RCLONE" > rclone.conf
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
 
@@ -52,9 +52,9 @@ jobs:
     # 9️⃣ Subir archivo final a OneDrive
     - name: ☁️ Subir archivo final
       env:
-        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+        RCLONE_CONFIG: ${{ secrets.AUTOMATE_RCLONE}}
       run: |
-        echo "$RCLONE_CONFIG" > rclone.conf
+        echo "$AUTOMATE_RCLONE" > rclone.conf
         FECHA=$(date +'%Y-%m-%d')
         ARCHIVO="resultado_observaciones_$FECHA.xlsx"
         rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --progress
