@@ -3,7 +3,7 @@ name: Comparar Fechas y Subir a OneDrive
 on:
   workflow_dispatch:   # Ejecutar manual
   #schedule:
-    #- cron: "0 10 * * *"  # Todos los días a las 10:00 UTC
+  #  - cron: "0 10 * * *"  # Todos los días a las 10:00 UTC
 
 jobs:
   procesar:
@@ -14,7 +14,7 @@ jobs:
     - name: 📥 Checkout
       uses: actions/checkout@v3
 
-    # 2️⃣ Instalar Python
+    # 2️⃣ Configurar Python
     - name: 🐍 Configurar Python
       uses: actions/setup-python@v4
       with:
@@ -32,8 +32,8 @@ jobs:
     - name: ⚙️ Instalar Rclone
       run: curl https://rclone.org/install.sh | sudo bash
 
-    # 6️⃣ Descargar archivos desde OneDrive (a.formularios)
-    - name: 📥 Descargar archivos
+    # 6️⃣ Descargar archivos desde OneDrive
+    - name: 📥 Descargar archivos desde OneDrive
       env:
         RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
       run: |
@@ -41,9 +41,9 @@ jobs:
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
 
-    # 7️⃣ Ejecutar Script 1 (merge y observaciones)
+    # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
     - name: ▶️ Ejecutar Script 1
-      run: python script_merge.py
+      run: python TEST_MARGE_FECHAS.py
 
     # 8️⃣ Ejecutar Script 2 (Selenium)
     - name: ▶️ Ejecutar Script 2
