@@ -36,7 +36,15 @@ df = limpiar_columnas(df)
 
 # 📌 Columna que contiene los DNIs (ya limpia)
 COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
-df = forzar_texto(df, COLUMNA_DNIS)
+
+# Limpia los valores de la columna de DNIs
+def limpiar_columna_dnis(df, columna):
+    if columna in df.columns:
+        df[columna] = df[columna].astype(str).apply(lambda x: x.strip() if isinstance(x, str) else x)
+    return df
+
+# 📌 Limpio la columna ANTES de convertirla en lista
+df = limpiar_columna_dnis(df, COLUMNA_DNIS)
 
 # Convertir columna a lista
 dnis = df[COLUMNA_DNIS].tolist()
