@@ -1,44 +1,60 @@
-name: Merge + Selenium + OneDrive Upload
+name: Comparar Fechas y Subir a OneDrive
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # Ejecutar manual
+  #schedule:
+    #- cron: "0 10 * * *"  # Todos los días a las 10:00 UTC
 
 jobs:
-  run-all:
+  procesar:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Descargar repositorio
-      - name: 📥 Checkout código
-        uses: actions/checkout@v3
+    # 1️⃣ Clonar repositorio
+    - name: 📥 Checkout
+      uses: actions/checkout@v3
 
-      # 2️⃣ Configurar Python
-      - name: 🐍 Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    # 2️⃣ Instalar Python
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      # 3️⃣ Instalar dependencias
-      - name: 📦 Instalar dependencias
-        run: |
-          pip install -r requirements.txt
+    # 3️⃣ Instalar dependencias
+    - name: 📦 Instalar librerías
+      run: pip install -r requirements.txt
 
-      # 4️⃣ Ejecutar script de merge
-      - name: 🔄 Ejecutar script de merge
-        run: |
-          python script_merge.py
+    # 4️⃣ Crear carpeta local data/
+    - name: 📁 Crear carpeta data/
+      run: mkdir -p data
 
-      # 5️⃣ Ejecutar script de Selenium
-      - name: 🤖 Ejecutar script de Selenium
-        run: |
-          python script_selenium.py
+    # 5️⃣ Instalar Rclone
+    - name: ⚙️ Instalar Rclone
+      run: curl https://rclone.org/install.sh | sudo bash
 
-      # 6️⃣ Subir resultado final a OneDrive
-      - name: 📤 Subir resultado a OneDrive
-        env:
-          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE }}
-        run: |
-          echo "$RCLONE_CONF" > rclone.conf
-          FECHA=$(date +'%Y-%m-%d')
-          ARCHIVO="resultado_observaciones_$FECHA.xlsx"
-          rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --create-empty-src-dirs
+    # 6️⃣ Descargar archivos desde OneDrive (a.formularios)
+    - name: 📥 Descargar archivos
+      env:
+        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+      run: |
+        echo "$RCLONE_CONFIG" > rclone.conf
+        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
+        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
+
+    # 7️⃣ Ejecutar Script 1 (merge y observaciones)
+    - name: ▶️ Ejecutar Script 1
+      run: python TEST_MARGE_FECHAS.py
+
+    # 8️⃣ Ejecutar Script 2 (Selenium)
+    - name: ▶️ Ejecutar Script 2
+      run: python script_selenium.py
+
+    # 9️⃣ Subir archivo final a OneDrive
+    - name: ☁️ Subir archivo final
+      env:
+        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+      run: |
+        echo "$RCLONE_CONFIG" > rclone.conf
+        FECHA=$(date +'%Y-%m-%d')
+        ARCHIVO="resultado_observaciones_$FECHA.xlsx"
+        rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --progress
