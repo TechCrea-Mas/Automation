@@ -1,48 +1,42 @@
-name: Comparar Fechas Voluntariado
+name: Merge + Selenium + OneDrive Upload
 
 on:
-#  schedule:
-#    - cron: '0 3 * * *'   # ⏰ Se ejecuta todos los días a las 10:00 p.m. hora Perú (UTC-5 = 03:00 UTC)
-    workflow_dispatch:      # 🔘 Permite ejecución manual
+  workflow_dispatch:
 
 jobs:
-  procesar:
+  run-all:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Clonar repositorio
+      # 1️⃣ Descargar repositorio
+      - name: 📥 Checkout código
         uses: actions/checkout@v3
 
-      - name: 📦 Instalar Python y dependencias
+      # 2️⃣ Configurar Python
+      - name: 🐍 Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: 📦 Instalar librerías necesarias
+      # 3️⃣ Instalar dependencias
+      - name: 📦 Instalar dependencias
         run: |
-          pip install pandas openpyxl
+          pip install -r requirements.txt
 
-      - name: 📁 Crear carpeta data/
-        run: mkdir data
-
-      - name: 🔧 Instalar rclone
+      # 4️⃣ Ejecutar script de merge
+      - name: 🔄 Ejecutar script de merge
         run: |
-          curl https://rclone.org/install.sh | sudo bash
+          python script_merge.py
 
-      - name: 📥 Descargar archivos desde OneDrive con rclone
-        env:
-          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE  }}
+      # 5️⃣ Ejecutar script de Selenium
+      - name: 🤖 Ejecutar script de Selenium
         run: |
-          echo "$RCLONE_CONF" > rclone.conf
-          rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
-          rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
+          python script_selenium.py
 
-      - name: ▶️ Ejecutar script de comparación
-        run: python TEST_MARGE_FECHAS.py
-
+      # 6️⃣ Subir resultado final a OneDrive
       - name: 📤 Subir resultado a OneDrive
         env:
-          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE  }}
+          RCLONE_CONF: ${{ secrets.AUTOMATE_RCLONE }}
         run: |
           echo "$RCLONE_CONF" > rclone.conf
           FECHA=$(date +'%Y-%m-%d')
