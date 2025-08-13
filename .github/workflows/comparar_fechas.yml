@@ -35,24 +35,24 @@ jobs:
     # 6️⃣ Descargar archivos desde OneDrive
     - name: 📥 Descargar archivos desde OneDrive
       env:
-        RCLONE_CONFIG: ${{ secrets.AUTOMATE_RCLONE}}
+        AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
-
+    
     # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
     - name: ▶️ Ejecutar Script 1
       run: python script_merge.py
-
+    
     # 8️⃣ Ejecutar Script 2 (Selenium)
     - name: ▶️ Ejecutar Script 2
       run: python script_selenium.py
-
+    
     # 9️⃣ Subir archivo final a OneDrive
     - name: ☁️ Subir archivo final
       env:
-        RCLONE_CONFIG: ${{ secrets.AUTOMATE_RCLONE}}
+        AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
         FECHA=$(date +'%Y-%m-%d')
