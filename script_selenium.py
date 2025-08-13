@@ -35,7 +35,24 @@ df = pd.read_excel(archivo_salida)
 df = limpiar_columnas(df)
 
 # 📌 Columna que contiene los DNIs (ya limpia)
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
+##
+COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"  # Ajusta si el nombre difiere
+os.makedirs(DEBUG_FOLDER, exist_ok=True)
+
+# 1. Leer DNIs desde Excel
+df_dnis = pd.read_excel(EXCEL_ENTRADA, sheet_name=NOMBRE_HOJA)
+
+print("Columnas encontradas en el Excel:", df_dnis.columns.tolist())  # 🔍 Verificar columnas
+
+# Verificar si la columna existe antes de continuar
+if COLUMNA_DNIS not in df_dnis.columns:
+    raise ValueError(f"La columna '{COLUMNA_DNIS}' no se encontró en el Excel.")
+
+dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
+
+print("Primeros DNIs leídos:", dnis[:10])  # 🔍 Vista previa
+
+##
 
 # Limpia los valores de la columna de DNIs
 def limpiar_columna_dnis(df, columna):
