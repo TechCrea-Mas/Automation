@@ -1,13 +1,24 @@
 import time
 from datetime import datetime
 from pathlib import Path
-
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# --- Limpieza inicial de columnas ---
+def limpiar_columnas(df):
+    df.columns = df.columns.str.strip()  # Quita espacios al inicio/fin
+    df.columns = df.columns.str.replace('\n', ' ', regex=True)  # Quita saltos de línea
+    return df
+
+# --- Asegurar tipo texto en columna clave ---
+def forzar_texto(df, columna):
+    if columna in df.columns:
+        df[columna] = df[columna].astype(str).str.strip()
+    return df
 
 # 📂 Crear carpeta de salida si no existe
 Path("TEST_salida").mkdir(exist_ok=True)
@@ -19,12 +30,16 @@ archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xls
 if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
 
+# Cargar y limpiar el DataFrame
 df = pd.read_excel(archivo_salida)
+df = limpiar_columnas(df)
 
-# 📌 Columna que contiene los DNIs
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
-dnis = df[COLUMNA_DNIS].astype(str).tolist()
+# 📌 Columna que contiene los DNIs (ya limpia)
+COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
+df = forzar_texto(df, COLUMNA_DNIS)
 
+# Convertir columna a lista
+dnis = df[COLUMNA_DNIS].tolist()
 print(f"📄 Archivo cargado con {len(dnis)} DNIs.")
 
 # 🔹 Configuración para Chrome en modo headless
@@ -80,11 +95,11 @@ df_resultados = pd.DataFrame(resultados)
 
 # 📌 Unir OBS_DNI y nombre al DataFrame original
 df = df.merge(
-    df_resultados[[ "dni", "nombre", "OBS_DNI" ]],
+    df_resultados[["dni", "nombre", "OBS_DNI"]],
     left_on=COLUMNA_DNIS,
     right_on="dni",
     how="left"
-).drop(columns=["dni"])  # Eliminamos la columna auxiliar
+).drop(columns=["dni"])
 
 # 💾 Guardar archivo actualizado
 df.to_excel(archivo_salida, index=False)
