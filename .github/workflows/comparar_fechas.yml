@@ -43,7 +43,7 @@ jobs:
 
     # 7️⃣ Ejecutar Script 1 (merge y observaciones)
     - name: ▶️ Ejecutar Script 1
-      run: python TEST_MARGE_FECHAS.py
+      run: python script_merge.py
 
     # 8️⃣ Ejecutar Script 2 (Selenium)
     - name: ▶️ Ejecutar Script 2
