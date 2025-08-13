@@ -47,7 +47,8 @@ def limpiar_columna_dnis(df, columna):
 df = limpiar_columna_dnis(df, COLUMNA_DNIS)
 
 # Convertir columna a lista
-dnis = df[COLUMNA_DNIS].tolist()
+dnis = df[COLUMNA_DNIS].astype(str).tolist()  # ✅
+
 print(f"📄 Archivo cargado con {len(dnis)} DNIs.")
 
 # 🔹 Configuración para Chrome en modo headless
