@@ -8,33 +8,32 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-
 # 📂 Crear carpeta de salida si no existe
 Path("TEST_salida").mkdir(exist_ok=True)
 
-# 📂 Cargar archivo generado por Script 1
+# 📂 Ruta del archivo generado por Script 1
 fecha_hoy = datetime.today().strftime('%Y-%m-%d')
 archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xlsx"
-df_dnis = pd.read_excel(archivo_salida)
-print("Columnas del archivo de salida (con representación visible de espacios y saltos de línea):")
-for col in df_dnis.columns:
-    print(repr(col))
+
+# ⚠️ Verificar existencia antes de leer
 if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
 
-# Imprimir todas las columnas
+# 📄 Leer archivo Excel
+df_dnis = pd.read_excel(archivo_salida)
+
+# Mostrar columnas para depuración
 print("Columnas del archivo de salida:")
 for col in df_dnis.columns:
     print(f"- '{col}'")
-    
+
+# 📌 Configurar columna que contiene los DNIs
 COLUMNA_DNIS = "DNI"
-# Convertir a texto y limpiar espacios
-dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
+if COLUMNA_DNIS not in df_dnis.columns:
+    raise ValueError(f"❌ No se encontró la columna '{COLUMNA_DNIS}' en el archivo.")
 
-# Renombrar la columna para usarla en merges y scripts
-#df = df.rename(columns={col_dni_original: "DNI_OBS"})
-
-
+# Convertir a texto y limpiar
+dnis = df_dnis[COLUMNA_DNIS].astype(str).str.strip().tolist()
 
 # 🔹 Configuración para Chrome en modo headless
 def crear_driver():
@@ -87,8 +86,8 @@ def buscar_nombre(dni):
 resultados = [buscar_nombre(dni) for dni in dnis]
 df_resultados = pd.DataFrame(resultados)
 
-# 📌 Unir OBS_DNI y nombre al DataFrame original
-df = df.merge(
+# 📌 Unir resultados al DataFrame original
+df_final = df_dnis.merge(
     df_resultados[["dni", "nombre", "OBS_DNI"]],
     left_on=COLUMNA_DNIS,
     right_on="dni",
@@ -96,6 +95,6 @@ df = df.merge(
 ).drop(columns=["dni"])
 
 # 💾 Guardar archivo actualizado
-df.to_excel(archivo_salida, index=False)
+df_final.to_excel(archivo_salida, index=False)
 print(f"📁 Archivo final actualizado con OBS_DNI: {archivo_salida}")
- 
+
