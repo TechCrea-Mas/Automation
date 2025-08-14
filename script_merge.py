@@ -21,7 +21,7 @@ Path("TEST_salida").mkdir(exist_ok=True)
 df_cierre = pd.read_excel("data/Forms Cierre de Voluntariado.xlsx", sheet_name="Sheet1")
 df_bienvenida = pd.read_excel("data/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx", sheet_name="data2025")
 
-col_dni = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
+col_dni_original = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
 col_fecha_cierre = "Fecha de vinculación a Crea+ Perú:\n"
 col_fecha_bienvenida = "¿Cuál es tu fecha de inicio en Crea+?"
 
