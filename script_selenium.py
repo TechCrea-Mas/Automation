@@ -1,72 +1,64 @@
+import pandas as pd
 import time
 import random
-import pandas as pd
+import tempfile
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# ==============================
-# 1. CONFIGURAR NAVEGADOR
-# ==============================
+# === CONFIGURAR SELENIUM PARA GITHUB ACTIONS ===
 chrome_options = Options()
-chrome_options.add_argument("--start-maximized")
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
+chrome_options.add_argument("--headless")  # Sin interfaz
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+
+# Crear un perfil temporal único para esta ejecución
+user_data_dir = tempfile.mkdtemp()
+chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
 
 driver = webdriver.Chrome(options=chrome_options)
 
-# ==============================
-# 2. LEER EXCEL DE DNIs
-# ==============================
-df_dnis = pd.read_excel("entrada.xlsx")  # Columna: DNI
-df_dnis["DNI"] = df_dnis["DNI"].astype(str).str.strip()
-
-# Lista para guardar resultados
+# === LEER LISTA DE DNIs ===
+df = pd.read_excel("dnis.xlsx")  # tu archivo con columna DOCUMENTO
 resultados = []
 
-# ==============================
-# 3. HACER CONSULTAS CON UN SOLO DRIVER
-# ==============================
-driver.get("https://e-consulta.sunat.gob.pe/cl-ti-itmrconsruc/jcrS00Alias")
+# === ABRIR UNA SOLA SESIÓN ===
+driver.get("https://www2.sunat.gob.pe/")
 
-for dni in df_dnis["DNI"]:
+for dni in df["DOCUMENTO"]:
     try:
-        # Esperar campo de ingreso
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "txtRuc"))).clear()
-        
-        # Escribir DNI
-        driver.find_element(By.ID, "txtRuc").send_keys(dni)
-        driver.find_element(By.ID, "txtRuc").send_keys(Keys.RETURN)
+        # Aquí iría el flujo para buscar el DNI en SUNAT
+        # (Esto depende de la estructura de la web, ajusta selectores según corresponda)
 
-        # Esperar que aparezca el resultado (ajusta selector si cambia)
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "someElementResult")))
-        
-        # Extraer nombre (AJUSTAR SELECTOR AL REAL)
-        nombre = driver.find_element(By.ID, "nombreContribuyente").text.strip()
+        # Ejemplo: escribir DNI
+        campo = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "txtDni"))
+        )
+        campo.clear()
+        campo.send_keys(str(dni))
 
-        resultados.append({"DNI": dni, "NOMBRE": nombre})
-        print(f"✅ {dni} → {nombre}")
+        # Clic en botón buscar
+        boton = driver.find_element(By.ID, "btnBuscar")
+        boton.click()
+
+        # Esperar resultado
+        nombre = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".resultadoNombre"))
+        ).text
+
+        resultados.append({"DNI": dni, "Nombre": nombre})
+
+        # Pausa aleatoria para evitar bloqueo
+        time.sleep(random.uniform(3, 6))
 
     except Exception as e:
-        print(f"⚠️ Error con DNI {dni}: {e}")
-        resultados.append({"DNI": dni, "NOMBRE": None})
+        resultados.append({"DNI": dni, "Nombre": f"Error: {e}"})
 
-    # Pausa aleatoria para no ser bloqueados
-    time.sleep(random.uniform(2.5, 6.0))
-
-# ==============================
-# 4. CERRAR NAVEGADOR
-# ==============================
-driver.quit()
-
-# ==============================
-# 5. UNIFICAR Y GUARDAR RESULTADOS
-# ==============================
+# === GUARDAR RESULTADOS ===
 df_resultados = pd.DataFrame(resultados)
-df_final = pd.merge(df_dnis, df_resultados, on="DNI", how="left")
+df_resultados.to_excel("resultado_dnis.xlsx", index=False)
 
-df_final.to_excel("resultado_final.xlsx", index=False)
-print("📁 Resultados guardados en resultado_final.xlsx")
+driver.quit()
+print("✅ Proceso completado y resultados guardados en resultado_dnis.xlsx")
