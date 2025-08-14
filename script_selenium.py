@@ -21,7 +21,7 @@ if not archivo_salida.exists():
 
 # Imprimir todas las columnas
 print("Columnas del archivo de salida:")
-for col in df.columns:
+for col in archivo_salida.columns:
     print(f"- '{col}'")
     
 COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
