@@ -23,6 +23,7 @@ jobs:
     # 3️⃣ Instalar dependencias
     - name: 📦 Instalar librerías
       run: pip install -r requirements.txt
+           pip install webdriver-manager
 
     # 4️⃣ Crear carpeta local data/
     - name: 📁 Crear carpeta data/
