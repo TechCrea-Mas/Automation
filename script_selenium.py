@@ -104,3 +104,4 @@ df = df.merge(
 # 💾 Guardar archivo actualizado
 df.to_excel(archivo_salida, index=False)
 print(f"📁 Archivo final actualizado con OBS_DNI: {archivo_salida}")
+ 
