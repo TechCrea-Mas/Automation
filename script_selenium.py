@@ -18,16 +18,16 @@ archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xls
 
 if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
-
+# Revisar que exista
+print(df_dnis.columns.tolist())
+print(df_dnis[COLUMNA_DNIS].head())
 
 COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
 df_dnis = pd.read_excel(archivo_salida)
 # Convertir a texto y limpiar espacios
 dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
 
-# Revisar que exista
-print(df_dnis.columns.tolist())
-print(df_dnis[COLUMNA_DNIS].head())
+
 
 
 # Renombrar la columna para usarla en merges y scripts
