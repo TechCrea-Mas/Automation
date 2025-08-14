@@ -20,7 +20,7 @@ if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
 
 
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
+COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
 df_dnis = pd.read_excel(archivo_salida)
 # Convertir a texto y limpiar espacios
 dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
