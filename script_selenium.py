@@ -27,12 +27,9 @@ print("Columnas del archivo de salida:")
 for col in df_dnis.columns:
     print(f"- '{col}'")
     
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
+COLUMNA_DNIS = "DNI"
 # Convertir a texto y limpiar espacios
 dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
-
-
-
 
 # Renombrar la columna para usarla en merges y scripts
 #df = df.rename(columns={col_dni_original: "DNI_OBS"})
