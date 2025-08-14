@@ -21,7 +21,7 @@ if not archivo_salida.exists():
 
 
 COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
-df_dnis = pd.read_excel(archivo_salida, sheet_name=Sheet1)
+df_dnis = pd.read_excel(archivo_salida)
 # Convertir a texto y limpiar espacios
 dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
 
