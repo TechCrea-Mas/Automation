@@ -35,7 +35,7 @@ df = pd.read_excel(archivo_salida)
 df = limpiar_columnas(df)
 
 # 📌 Columna que contiene los DNIs (ya limpia)
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
+COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
 
 def limpiar_columna_dnis(df, COLUMNA_DNIS):
     df[COLUMNA_DNIS] = df[COLUMNA_DNIS].astype(str).apply(lambda x: x.strip() if isinstance(x, str) else x)
