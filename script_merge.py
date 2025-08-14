@@ -25,12 +25,19 @@ col_dni = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
 col_fecha_cierre = "Fecha de vinculación a Crea+ Perú:\n"
 col_fecha_bienvenida = "¿Cuál es tu fecha de inicio en Crea+?"
 
-# 🔍 Normalizar valores
-df_cierre[col_dni] = df_cierre[col_dni].astype(str).str.strip()
-df_bienvenida[col_dni.strip()] = df_bienvenida[col_dni.strip()].astype(str).str.strip()
+# ✏️ Renombrar columnas para simplificar
+df_cierre = df_cierre.rename(columns={col_dni_original: "DNI"})
+df_bienvenida = df_bienvenida.rename(columns={col_dni_original.strip(): "DNI"})
 
-# Unir las dos tablas por el DNI
-df_merged = df_cierre.merge(df_bienvenida[[col_dni.strip(), col_fecha_bienvenida]], left_on=col_dni, right_on=col_dni.strip(), how="left"
+# 🔍 Normalizar valores
+df_cierre["DNI"] = df_cierre["DNI"].astype(str).str.strip()
+df_bienvenida["DNI"] = df_bienvenida["DNI"].astype(str).str.strip()
+
+# 🔗 Unir las dos tablas por el DNI
+df_merged = df_cierre.merge(
+    df_bienvenida[["DNI", col_fecha_bienvenida]],
+    on="DNI",
+    how="left"
 )
 
 # 🧠 Comparar fechas
