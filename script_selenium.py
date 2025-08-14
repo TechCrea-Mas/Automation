@@ -15,17 +15,19 @@ Path("TEST_salida").mkdir(exist_ok=True)
 # 📂 Cargar archivo generado por Script 1
 fecha_hoy = datetime.today().strftime('%Y-%m-%d')
 archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xlsx"
-
+df_dnis = pd.read_excel(archivo_salida)
+print("Columnas del archivo de salida (con representación visible de espacios y saltos de línea):")
+for col in df_dnis.columns:
+    print(repr(col))
 if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
 
 # Imprimir todas las columnas
 print("Columnas del archivo de salida:")
-for col in archivo_salida.columns:
+for col in df_dnis.columns:
     print(f"- '{col}'")
     
 COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
-df_dnis = pd.read_excel(archivo_salida)
 # Convertir a texto y limpiar espacios
 dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
 
