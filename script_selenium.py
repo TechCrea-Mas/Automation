@@ -1,91 +1,72 @@
 import time
 import random
-from datetime import datetime
-from pathlib import Path
 import pandas as pd
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# 📂 Crear carpeta de salida si no existe
-Path("TEST_salida").mkdir(exist_ok=True)
+# ==============================
+# 1. CONFIGURAR NAVEGADOR
+# ==============================
+chrome_options = Options()
+chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
 
-# 📂 Cargar archivo generado por Script 1
-fecha_hoy = datetime.today().strftime('%Y-%m-%d')
-archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xlsx"
+driver = webdriver.Chrome(options=chrome_options)
 
-if not archivo_salida.exists():
-    raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
+# ==============================
+# 2. LEER EXCEL DE DNIs
+# ==============================
+df_dnis = pd.read_excel("entrada.xlsx")  # Columna: DNI
+df_dnis["DNI"] = df_dnis["DNI"].astype(str).str.strip()
 
-df = pd.read_excel(archivo_salida)
-COLUMNA_DNIS = "DNI"
-dnis = df[COLUMNA_DNIS].astype(str).tolist()
+# Lista para guardar resultados
+resultados = []
 
-# 🔹 Configuración para Chrome en modo headless
-def crear_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    return webdriver.Chrome(options=chrome_options)
+# ==============================
+# 3. HACER CONSULTAS CON UN SOLO DRIVER
+# ==============================
+driver.get("https://e-consulta.sunat.gob.pe/cl-ti-itmrconsruc/jcrS00Alias")
 
-# 🔍 Función para buscar nombre por DNI en SUNAT usando driver ya abierto
-def buscar_nombre(driver, dni):
-    resultado = {"dni": dni, "nombre": None, "OBS_DNI": "❌ ERROR"}
+for dni in df_dnis["DNI"]:
     try:
-        driver.get("https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp")
+        # Esperar campo de ingreso
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "txtRuc"))).clear()
+        
+        # Escribir DNI
+        driver.find_element(By.ID, "txtRuc").send_keys(dni)
+        driver.find_element(By.ID, "txtRuc").send_keys(Keys.RETURN)
 
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "btnPorDocumento"))
-        ).click()
+        # Esperar que aparezca el resultado (ajusta selector si cambia)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "someElementResult")))
+        
+        # Extraer nombre (AJUSTAR SELECTOR AL REAL)
+        nombre = driver.find_element(By.ID, "nombreContribuyente").text.strip()
 
-        input_dni = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "txtNumeroDocumento"))
-        )
-        input_dni.clear()
-        input_dni.send_keys(dni)
-
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "btnAceptar"))
-        ).click()
-
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "list-group-item-heading"))
-        )
-
-        nombre_element = driver.find_element(By.XPATH, "//h4[2]")
-        nombre = nombre_element.text.strip()
-
-        resultado["nombre"] = nombre
-        resultado["OBS_DNI"] = "✅ OK"
-        print(f"✅ DNI {dni}: {nombre}")
+        resultados.append({"DNI": dni, "NOMBRE": nombre})
+        print(f"✅ {dni} → {nombre}")
 
     except Exception as e:
         print(f"⚠️ Error con DNI {dni}: {e}")
-    finally:
-        return resultado
+        resultados.append({"DNI": dni, "NOMBRE": None})
 
-# ▶️ Procesar todos los DNIs con un solo driver
-driver = crear_driver()
-resultados = []
-for dni in dnis:
-    resultados.append(buscar_nombre(driver, dni))
-    time.sleep(random.uniform(2, 5))  # pausa aleatoria entre 2 y 5 segundos
+    # Pausa aleatoria para no ser bloqueados
+    time.sleep(random.uniform(2.5, 6.0))
 
+# ==============================
+# 4. CERRAR NAVEGADOR
+# ==============================
 driver.quit()
 
-# 📌 Unir OBS_DNI y nombre al DataFrame original
+# ==============================
+# 5. UNIFICAR Y GUARDAR RESULTADOS
+# ==============================
 df_resultados = pd.DataFrame(resultados)
-df = df.merge(
-    df_resultados[["dni", "nombre", "OBS_DNI"]],
-    left_on=COLUMNA_DNIS,
-    right_on="dni",
-    how="left"
-).drop(columns=["dni"])
+df_final = pd.merge(df_dnis, df_resultados, on="DNI", how="left")
 
-# 💾 Guardar archivo actualizado
-df.to_excel(archivo_salida, index=False)
-print(f"📁 Archivo final actualizado con OBS_DNI: {archivo_salida}")
-
+df_final.to_excel("resultado_final.xlsx", index=False)
+print("📁 Resultados guardados en resultado_final.xlsx")
