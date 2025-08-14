@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 
 # --- Limpieza inicial de columnas ---
 def limpiar_columnas(df):
@@ -36,33 +35,14 @@ df = pd.read_excel(archivo_salida)
 df = limpiar_columnas(df)
 
 # 📌 Columna que contiene los DNIs (ya limpia)
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"  # Ajusta si el nombre difiere
+COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):"
 
-# 1. Leer DNIs desde Excel de entrada
-EXCEL_ENTRADA = archivo_salida  # Si quieres usar otro archivo, cámbialo aquí
-NOMBRE_HOJA = 0  # O el nombre de la hoja
-df_dnis = pd.read_excel(EXCEL_ENTRADA, sheet_name=NOMBRE_HOJA)
-
-print("Columnas encontradas en el Excel:", df_dnis.columns.tolist())  # 🔍 Verificar columnas
-
-# Verificar si la columna existe antes de continuar
-if COLUMNA_DNIS not in df_dnis.columns:
-    raise ValueError(f"La columna '{COLUMNA_DNIS}' no se encontró en el Excel.")
-
-dnis = df_dnis[COLUMNA_DNIS].astype(str).tolist()
-print("Primeros DNIs leídos:", dnis[:10])  # 🔍 Vista previa
-
-# Limpia los valores de la columna de DNIs
-def limpiar_columna_dnis(df, columna):
-    if columna in df.columns:
-        df[columna] = df[columna].astype(str).apply(lambda x: x.strip() if isinstance(x, str) else x)
+def limpiar_columna_dnis(df, COLUMNA_DNIS):
+    df[COLUMNA_DNIS] = df[COLUMNA_DNIS].astype(str).apply(lambda x: x.strip() if isinstance(x, str) else x)
     return df
 
-# 📌 Limpio la columna ANTES de convertirla en lista
-df = limpiar_columna_dnis(df, COLUMNA_DNIS)
-
 # Convertir columna a lista
-dnis = df[COLUMNA_DNIS].astype(str).tolist()
+dnis = df[COLUMNA_DNIS].tolist()
 print(f"📄 Archivo cargado con {len(dnis)} DNIs.")
 
 # 🔹 Configuración para Chrome en modo headless
