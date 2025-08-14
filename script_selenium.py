@@ -36,17 +36,46 @@ if COLUMNA_DNIS not in df_dnis.columns:
 df_dnis[COLUMNA_DNIS] = df_dnis[COLUMNA_DNIS].astype(str).str.strip()
 dnis = df_dnis[COLUMNA_DNIS].tolist()
 
-# 🔹 Configuración para Chrome en modo headless
+
+
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+
+# --- Configuración de Chrome ---
 chrome_options = Options()
-chrome_options.add_argument("--headless")  # Modo sin interfaz
+
+
+# Modo headless (sin interfaz gráfica)
+chrome_options.add_argument("--headless=new")  # "new" para evitar advertencias en Chrome 109+
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--window-size=1920,1080")
+chrome_options.add_argument("--disable-infobars")
+chrome_options.add_argument("--disable-extensions")
+chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--remote-debugging-port=9222")  # Para depuración
+
+
+# Opcional: idioma en español (puede ser útil en SUNAT)
+chrome_options.add_argument("--lang=es-PE")
+
+# --- Inicializar driver ---
+driver = webdriver.Chrome(
+    service=Service(ChromeDriverManager().install()),
+    options=chrome_options
+)
+
 
 # Crear un directorio temporal para el perfil de Chrome
-user_data_dir = tempfile.mkdtemp()
-chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
+#user_data_dir = tempfile.mkdtemp()
+#chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
 
-driver = webdriver.Chrome(options=chrome_options)
+#driver = webdriver.Chrome(options=chrome_options)
 
 # 🔍 Función para buscar nombre por DNI en SUNAT con guardado de depuración
 def buscar_nombre(driver, dni):
