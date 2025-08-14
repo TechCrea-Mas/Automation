@@ -45,9 +45,16 @@ jobs:
     - name: ▶️ Ejecutar Script 1
       run: python script_merge.py
     
-    # 8️⃣ Ejecutar Script 2 (Selenium)
+   # 8️⃣ Ejecutar Script 2 (Selenium)
     - name: ▶️ Ejecutar Script 2
       run: python script_selenium.py
+    
+    # 📦 Subir carpeta DEBUG_FOLDER como artefacto
+    - name: 📤 Subir carpeta DEBUG_FOLDER
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-folder
+        path: DEBUG_FOLDER
     
     # 9️⃣ Subir archivo final a OneDrive
     - name: ☁️ Subir archivo final
@@ -58,3 +65,4 @@ jobs:
         FECHA=$(date +'%Y-%m-%d')
         ARCHIVO="resultado_observaciones_$FECHA.xlsx"
         rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --progress
+
