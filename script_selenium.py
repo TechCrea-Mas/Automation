@@ -12,33 +12,26 @@ from selenium.webdriver.support import expected_conditions as EC
 # 📂 Crear carpeta de salida si no existe
 Path("TEST_salida").mkdir(exist_ok=True)
 
-# 📂 Ruta del archivo generado por Script 1
+# 📂 Cargar archivo generado por Script 1
 fecha_hoy = datetime.today().strftime('%Y-%m-%d')
 archivo_salida = Path("TEST_salida") / f"resultado_observaciones_{fecha_hoy}.xlsx"
 
-# ⚠️ Verificar existencia antes de leer
 if not archivo_salida.exists():
     raise FileNotFoundError(f"❌ No se encontró el archivo: {archivo_salida}")
 
-# 📄 Leer archivo Excel
-df_dnis = pd.read_excel(archivo_salida)
-
+df = pd.read_excel(archivo_salida)
 COLUMNA_DNIS = "DNI"
-if COLUMNA_DNIS not in df_dnis.columns:
-    raise ValueError(f"❌ No se encontró la columna '{COLUMNA_DNIS}' en el archivo.")
-
-# Convertir DNIs a texto y limpiar espacios
-df_dnis[COLUMNA_DNIS] = df_dnis[COLUMNA_DNIS].astype(str).str.strip()
-dnis = df_dnis[COLUMNA_DNIS].tolist()
+dnis = df[COLUMNA_DNIS].astype(str).tolist()
 
 # 🔹 Configuración para Chrome en modo headless
-chrome_options = Options()
-chrome_options.add_argument("--headless=new")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(options=chrome_options)
+def crear_driver():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    return webdriver.Chrome(options=chrome_options)
 
-# 🔍 Función para buscar nombre por DNI en SUNAT
+# 🔍 Función para buscar nombre por DNI en SUNAT usando driver ya abierto
 def buscar_nombre(driver, dni):
     resultado = {"dni": dni, "nombre": None, "OBS_DNI": "❌ ERROR"}
     try:
@@ -71,30 +64,28 @@ def buscar_nombre(driver, dni):
 
     except Exception as e:
         print(f"⚠️ Error con DNI {dni}: {e}")
-    return resultado
+    finally:
+        return resultado
 
-# ▶️ Procesar todos los DNIs con pausas aleatorias
+# ▶️ Procesar todos los DNIs con un solo driver
+driver = crear_driver()
 resultados = []
 for dni in dnis:
     resultados.append(buscar_nombre(driver, dni))
-    time.sleep(random.uniform(2, 5))  # Pausa aleatoria para evitar bloqueos
+    time.sleep(random.uniform(2, 5))  # pausa aleatoria entre 2 y 5 segundos
 
-# Cerrar driver al final
 driver.quit()
 
-# 📌 Crear DataFrame de resultados y forzar tipo string en 'dni'
+# 📌 Unir OBS_DNI y nombre al DataFrame original
 df_resultados = pd.DataFrame(resultados)
-df_resultados["dni"] = df_resultados["dni"].astype(str)
-
-# 📌 Unir resultados al DataFrame original
-df_final = df_dnis.merge(
-    df_resultados,
+df = df.merge(
+    df_resultados[["dni", "nombre", "OBS_DNI"]],
     left_on=COLUMNA_DNIS,
     right_on="dni",
     how="left"
 ).drop(columns=["dni"])
 
 # 💾 Guardar archivo actualizado
-df_final.to_excel(archivo_salida, index=False)
+df.to_excel(archivo_salida, index=False)
 print(f"📁 Archivo final actualizado con OBS_DNI: {archivo_salida}")
 
