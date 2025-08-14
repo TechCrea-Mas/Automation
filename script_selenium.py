@@ -1,4 +1,5 @@
 import time
+import random
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -22,30 +23,23 @@ if not archivo_salida.exists():
 # 📄 Leer archivo Excel
 df_dnis = pd.read_excel(archivo_salida)
 
-# Mostrar columnas para depuración
-print("Columnas del archivo de salida:")
-for col in df_dnis.columns:
-    print(f"- '{col}'")
-
-# 📌 Configurar columna que contiene los DNIs
 COLUMNA_DNIS = "DNI"
 if COLUMNA_DNIS not in df_dnis.columns:
     raise ValueError(f"❌ No se encontró la columna '{COLUMNA_DNIS}' en el archivo.")
 
-# Convertir a texto y limpiar
-dnis = df_dnis[COLUMNA_DNIS].astype(str).str.strip().tolist()
+# Convertir DNIs a texto y limpiar espacios
+df_dnis[COLUMNA_DNIS] = df_dnis[COLUMNA_DNIS].astype(str).str.strip()
+dnis = df_dnis[COLUMNA_DNIS].tolist()
 
 # 🔹 Configuración para Chrome en modo headless
-def crear_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    return webdriver.Chrome(options=chrome_options)
+chrome_options = Options()
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+driver = webdriver.Chrome(options=chrome_options)
 
 # 🔍 Función para buscar nombre por DNI en SUNAT
-def buscar_nombre(dni):
-    driver = crear_driver()
+def buscar_nombre(driver, dni):
     resultado = {"dni": dni, "nombre": None, "OBS_DNI": "❌ ERROR"}
     try:
         driver.get("https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp")
@@ -68,7 +62,6 @@ def buscar_nombre(dni):
             EC.presence_of_element_located((By.CLASS_NAME, "list-group-item-heading"))
         )
 
-        time.sleep(1)
         nombre_element = driver.find_element(By.XPATH, "//h4[2]")
         nombre = nombre_element.text.strip()
 
@@ -78,17 +71,24 @@ def buscar_nombre(dni):
 
     except Exception as e:
         print(f"⚠️ Error con DNI {dni}: {e}")
-    finally:
-        driver.quit()
-        return resultado
+    return resultado
 
-# ▶️ Procesar todos los DNIs
-resultados = [buscar_nombre(dni) for dni in dnis]
+# ▶️ Procesar todos los DNIs con pausas aleatorias
+resultados = []
+for dni in dnis:
+    resultados.append(buscar_nombre(driver, dni))
+    time.sleep(random.uniform(2, 5))  # Pausa aleatoria para evitar bloqueos
+
+# Cerrar driver al final
+driver.quit()
+
+# 📌 Crear DataFrame de resultados y forzar tipo string en 'dni'
 df_resultados = pd.DataFrame(resultados)
+df_resultados["dni"] = df_resultados["dni"].astype(str)
 
 # 📌 Unir resultados al DataFrame original
 df_final = df_dnis.merge(
-    df_resultados[["dni", "nombre", "OBS_DNI"]],
+    df_resultados,
     left_on=COLUMNA_DNIS,
     right_on="dni",
     how="left"
