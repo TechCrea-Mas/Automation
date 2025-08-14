@@ -8,10 +8,13 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 import tempfile
 
-# 📂 Crear carpeta de salida si no existe
+# 📂 Carpeta de depuración
+DEBUG_FOLDER = Path("DEBUG_FOLDER")
+DEBUG_FOLDER.mkdir(exist_ok=True)
+
+# 📂 Carpeta donde está el archivo de entrada
 Path("TEST_salida").mkdir(exist_ok=True)
 
 # 📂 Ruta del archivo generado por Script 1
@@ -45,7 +48,7 @@ chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
 
 driver = webdriver.Chrome(options=chrome_options)
 
-# 🔍 Función para buscar nombre por DNI en SUNAT
+# 🔍 Función para buscar nombre por DNI en SUNAT con guardado de depuración
 def buscar_nombre(driver, dni):
     resultado = {"dni": dni, "nombre": None, "OBS_DNI": "❌ ERROR"}
     try:
@@ -76,8 +79,17 @@ def buscar_nombre(driver, dni):
         resultado["OBS_DNI"] = "✅ OK"
         print(f"✅ DNI {dni}: {nombre}")
 
+        # Guardar HTML y screenshot exitosos
+        with open(DEBUG_FOLDER / f"{dni}_ok.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        driver.save_screenshot(DEBUG_FOLDER / f"{dni}_ok.png")
+
     except Exception as e:
         print(f"⚠️ Error con DNI {dni}: {e}")
+        driver.save_screenshot(DEBUG_FOLDER / f"{dni}_error.png")
+        with open(DEBUG_FOLDER / f"{dni}_error.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+
     return resultado
 
 # ▶️ Procesar todos los DNIs con pausas aleatorias
@@ -104,3 +116,4 @@ df_final = df_dnis.merge(
 # 💾 Guardar archivo actualizado
 df_final.to_excel(archivo_salida, index=False)
 print(f"📁 Archivo final actualizado con OBS_DNI: {archivo_salida}")
+print(f"📂 Archivos de depuración guardados en: {DEBUG_FOLDER.resolve()}")
