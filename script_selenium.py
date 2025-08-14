@@ -32,18 +32,24 @@ if not archivo_salida.exists():
 
 # Cargar y limpiar el DataFrame
 df = pd.read_excel(archivo_salida)
+
+
+# 📌 Limpiar columnas
 df = limpiar_columnas(df)
 
-# 📌 Columna que contiene los DNIs (ya limpia)
-COLUMNA_DNIS = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
-
-def limpiar_columna_dnis(df, COLUMNA_DNIS):
-    df[COLUMNA_DNIS] = df[COLUMNA_DNIS].astype(str).apply(lambda x: x.strip() if isinstance(x, str) else x)
-    return df
+# Buscar el nombre real de la columna DNI después de limpiar
+for col in df.columns:
+    if "Documento de identidad" in col:
+        COLUMNA_DNIS = col
+        break
+else:
+    raise KeyError("❌ No se encontró la columna de DNI en el archivo")
 
 # Convertir columna a lista
-dnis = df[COLUMNA_DNIS].tolist()
-print(f"📄 Archivo cargado con {len(dnis)} DNIs.")
+dnis = df[COLUMNA_DNIS].astype(str).str.strip().tolist()
+print(f"📄 Archivo cargado con {len(dnis)} DNIs desde la columna: '{COLUMNA_DNIS}'")
+
+
 
 # 🔹 Configuración para Chrome en modo headless
 def crear_driver():
