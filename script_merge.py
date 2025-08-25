@@ -10,9 +10,13 @@ import os
 Path("TEST_salida").mkdir(exist_ok=True)
 
 # Leer las hojas desde los archivos
+
+file_path = "data/DNI_resultado_observaciones.xlsx"
+print("¿Existe el archivo?", os.path.exists(file_path))
+
 df_cierre = pd.read_excel("data/Forms Cierre de Voluntariado.xlsx", sheet_name="Sheet1")
 df_bienvenida = pd.read_excel("data/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx", sheet_name="data2025")
-df_DNI_SUNAT = pd.read_excel("data/DNI_resultado_observaciones.xlsx", sheet_name="Sheet1")
+df_DNI_SUNAT = pd.read_excel("TEST_salida/DNI_resultado_observaciones.xlsx", sheet_name="Sheet1")
 
 col_dni_original = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
 col_fecha_cierre = "Fecha de vinculación a Crea+ Perú:\n"
