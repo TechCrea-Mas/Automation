@@ -14,7 +14,7 @@ Path("TEST_salida").mkdir(exist_ok=True)
 # Archivo generado previamente por el script anterior
 fecha_hoy = datetime.today().strftime('%Y-%m-%d')
 archivo_base = f"TEST_salida/resultado_observaciones_{fecha_hoy}.xlsx"
-archivo_sunat = pd.read_excel("data/DNI_OBS.xlsx", sheet_name="Sheet1")
+archivo_sunat = "data/DNI_OBS.xlsx" 
 
 # === VERIFICACIÓN DE EXISTENCIA ===
 if not (os.path.exists(archivo_base) and os.path.exists(archivo_sunat)):
