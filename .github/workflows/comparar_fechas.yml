@@ -46,8 +46,13 @@ jobs:
       run: python script_merge.py
     
    # 8️⃣ Ejecutar Script 2 (Selenium)
-    - name: ▶️ Ejecutar Script 2
-      run: python script_selenium.py
+  # - name: ▶️ Ejecutar Script 2
+   #   run: python script_selenium.py
+
+   # 8️⃣ Ejecutar Script 3 (SUNAT)
+    - name: ▶️ Ejecutar Script 3
+      run: python comparar_con_sunat.py
+    
     
     # 📦 Subir carpeta DEBUG_FOLDER como artefacto
     - name: 📤 Subir carpeta DEBUG_FOLDER
