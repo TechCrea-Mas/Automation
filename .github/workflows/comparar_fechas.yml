@@ -69,7 +69,6 @@ jobs:
         AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
-        FECHA=$(date +'%Y-%m-%d')
-        ARCHIVO="resultado_observaciones_$FECHA.xlsx"
-        rclone --config rclone.conf copy "TEST_salida/$ARCHIVO" "ondri_a.formularios:a.Formularios/" --progress
+        rclone --config rclone.conf copy TEST_salida/ "ondri_a.formularios:a.Formularios/" --include "*.xlsx" --progress
+
 
