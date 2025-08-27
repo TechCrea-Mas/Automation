@@ -35,11 +35,15 @@ print(df_base.columns.tolist())
 print("\n📌 Columnas en archivo SUNAT:")
 print(df_sunat.columns.tolist())
 
-# === NORMALIZACIÓN DE DNI ===
-df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
-df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)
+# Normalizar columnas
+df_base.columns = df_base.columns.str.strip().str.replace("\n", "")
+df_sunat.columns = df_sunat.columns.str.strip().str.replace("\n", "")
 
-# === UNIÓN DE DATAFRAMES POR DNI ===
+# Normalización de DNI
+df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
+df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)   # ✅ ya no "DNI\n"
+
+# Unión
 df_final = df_base.merge(
     df_sunat,
     on="DNI",
