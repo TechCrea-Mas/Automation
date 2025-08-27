@@ -58,12 +58,16 @@ def comparar_fechas(row):
 
 df_merge["OBS_FECHA_INICIO"] = df_merge.apply(comparar_fechas, axis=1)
 
+print(df_final.columns.tolist())
+
+
 # --- Merge con SUNAT ---
 df_final = df_merge.merge(
     df_sunat[["DNI", "NOMBRE_SUNAT", "ESTADO_SUNAT"]],
     on="DNI",
     how="left"
 )
+print(df_final.columns.tolist())
 
 # --- Construir nombre completo desde CIERRE ---
 df_final["NOMBRE_COMPLETO_EXCEL"] = (
