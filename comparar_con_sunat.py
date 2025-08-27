@@ -28,6 +28,13 @@ if not (os.path.exists(archivo_base) and os.path.exists(archivo_sunat)):
 df_base = pd.read_excel(archivo_base, sheet_name="Sheet1")
 df_sunat = pd.read_excel(archivo_sunat, sheet_name="Sheet1")
 
+# === MOSTRAR COLUMNAS ===
+print("\n📌 Columnas en archivo base:")
+print(df_base.columns.tolist())
+
+print("\n📌 Columnas en archivo SUNAT:")
+print(df_sunat.columns.tolist())
+
 # === NORMALIZACIÓN DE DNI ===
 df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
 df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)
