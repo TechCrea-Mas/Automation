@@ -42,18 +42,22 @@ jobs:
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
         rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/DNI_OBS.xlsx" data/
 
-    
     # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
     - name: ▶️ Ejecutar Script 1
-      run: python script_merge.py
+      run: python COMPARACION_GLOBAL.py
+    
+    # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
+   # - name: ▶️ Ejecutar Script 1
+    #  run: python script_merge.py
     
    # 8️⃣ Ejecutar Script 2 (Selenium)
   # - name: ▶️ Ejecutar Script 2
    #   run: python script_selenium.py
 
    # 8️⃣ Ejecutar Script 3 (SUNAT)
-    - name: ▶️ Ejecutar Script 3
-      run: python comparar_con_sunat.py
+   # - name: ▶️ Ejecutar Script 3
+    #  run: python comparar_con_sunat.py
+    
     
     
     # 📦 Subir carpeta DEBUG_FOLDER como artefacto
