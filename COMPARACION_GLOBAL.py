@@ -8,113 +8,168 @@ import os
 import sys
 import unicodedata
 
-# Crear carpeta de salida si no existe
-Path("TEST_salida").mkdir(exist_ok=True)
+# === CONFIGURACIÓN DE RUTAS Y VARIABLES ===
+DIR_SALIDA = "TEST_salida"
+Path(DIR_SALIDA).mkdir(exist_ok=True)
 
-# === ARCHIVOS DE ENTRADA ===
-fecha_hoy = datetime.today().strftime('%Y-%m-%d')
+# Archivos de entrada
 archivo_cierre = "data/Forms Cierre de Voluntariado.xlsx"
 archivo_bienvenida = "data/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx"
 archivo_sunat = "data/DNI_OBS.xlsx"
 
-# === LECTURA ===
-df_cierre = pd.read_excel(archivo_cierre, sheet_name="Sheet1")
-df_bienvenida = pd.read_excel(archivo_bienvenida, sheet_name="data2025")
-df_sunat = pd.read_excel(archivo_sunat, sheet_name="Sheet1")
+# Hojas y columnas relevantes
+hoja_cierre = "Sheet1"
+hoja_bienvenida = "data2025"
+hoja_sunat = "Sheet1"
 
-# --- Normalizar nombres de columnas ---
-df_cierre.columns = df_cierre.columns.str.strip().str.replace("\n", "")
-df_bienvenida.columns = df_bienvenida.columns.str.strip().str.replace("\n", "")
-df_sunat.columns = df_sunat.columns.str.strip().str.replace("\n", "")
-
-# --- Columnas clave ---
-col_dni = "Documento de identidad (DNI/Pasaporte/Cédula):"
-col_fecha_cierre = "Fecha de vinculación a Crea+ Perú:"
+col_dni_original = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
+col_fecha_cierre = "Fecha de vinculación a Crea+ Perú:\n"
 col_fecha_bienvenida = "¿Cuál es tu fecha de inicio en Crea+?"
+col_nombres = "Nombres completos"
+col_apellidos = "Apellidos completos"
 
-# Renombrar para simplificar
-df_cierre = df_cierre.rename(columns={col_dni: "DNI"})
-df_bienvenida = df_bienvenida.rename(columns={col_dni: "DNI"})
-df_sunat = df_sunat.rename(columns={"DNI": "DNI"})
+# === FUNCIONES DE NORMALIZACIÓN DE NOMBRES ===
+def normalizar_nombre(nombre):
+    """Normaliza el nombre quitando tildes, pasando a mayúsculas, quitando caracteres no alfabéticos,
+    quitando dobles espacios y ordenando las palabras alfabéticamente."""
+    if pd.isna(nombre):
+        return ''
+    # Convierte a str y mayúsculas
+    nombre = str(nombre).upper()
+    # Quita tildes/acentos
+    nombre = ''.join(
+        c for c in unicodedata.normalize('NFD', nombre)
+        if unicodedata.category(c) != 'Mn'
+    )
+    # Quita caracteres no alfabéticos excepto espacios
+    nombre = ''.join(c for c in nombre if c.isalpha() or c.isspace())
+    # Quita dobles espacios y bordes
+    nombre = ' '.join(nombre.split())
+    # Ordena palabras
+    palabras = nombre.split()
+    palabras.sort()
+    return ' '.join(palabras)
 
-# Normalizar DNI
-for df in [df_cierre, df_bienvenida, df_sunat]:
-    df["DNI"] = df["DNI"].astype(str).str.strip().str.zfill(8)
+# === LECTURA Y PROCESAMIENTO DE ARCHIVOS DE VOLUNTARIADO Y BIENVENIDA ===
+try:
+    df_cierre = pd.read_excel(archivo_cierre, sheet_name=hoja_cierre)
+    df_bienvenida = pd.read_excel(archivo_bienvenida, sheet_name=hoja_bienvenida)
+except Exception as e:
+    print(f"❌ Error leyendo archivos de voluntariado/bienvenida: {e}")
+    sys.exit(1)
 
-# --- Merge cierre + bienvenida ---
-df_merge = df_cierre.merge(
+# Renombrar y normalizar columnas DNI
+df_cierre = df_cierre.rename(columns={col_dni_original: "DNI"})
+df_bienvenida = df_bienvenida.rename(columns={col_dni_original.strip(): "DNI"})
+
+df_cierre["DNI"] = df_cierre["DNI"].astype(str).str.strip().str.zfill(8)
+df_bienvenida["DNI"] = df_bienvenida["DNI"].astype(str).str.strip().str.zfill(8)
+
+# Merge y comparación de fechas
+df_merged = df_cierre.merge(
     df_bienvenida[["DNI", col_fecha_bienvenida]],
     on="DNI",
     how="left"
 )
 
-# --- Comparar fechas ---
 def comparar_fechas(row):
-    f1 = str(row[col_fecha_cierre]).strip()
-    f2 = str(row[col_fecha_bienvenida]).strip()
-    if pd.isna(f1) or pd.isna(f2) or f1 == "" or f2 == "":
+    fecha_cierre = str(row.get(col_fecha_cierre, "")).strip()
+    fecha_bienvenida = str(row.get(col_fecha_bienvenida, "")).strip()
+    if pd.isna(fecha_cierre) or pd.isna(fecha_bienvenida) or fecha_cierre == '' or fecha_bienvenida == '':
         return "INFORMACIÓN INCOMPLETA"
-    return "COINCIDEN" if f1 == f2 else f"{f1} ≠ {f2}"
+    elif fecha_cierre == fecha_bienvenida:
+        return "COINCIDEN"
+    else:
+        return f"{fecha_cierre} ≠ {fecha_bienvenida}"
 
-df_merge["OBS_FECHA_INICIO"] = df_merge.apply(comparar_fechas, axis=1)
+# Crear columna de observaciones (al final)
+df_merged["OBS_FECHA_INICIO"] = df_merged.apply(comparar_fechas, axis=1)
 
-print(df_final.columns.tolist())
+# === LECTURA Y CRUCE CON SUNAT ===
+fecha_hoy = datetime.today().strftime('%Y-%m-%d')
+archivo_temp = f"{DIR_SALIDA}/resultado_observaciones_{fecha_hoy}.xlsx"
+df_merged.to_excel(archivo_temp, index=False)
 
+if not os.path.exists(archivo_temp) or not os.path.exists(archivo_sunat):
+    print("❌ Faltan archivos de entrada para cruce con SUNAT:")
+    print(f" - {archivo_temp}: {'✅' if os.path.exists(archivo_temp) else '❌ NO ENCONTRADO'}")
+    print(f" - {archivo_sunat}: {'✅' if os.path.exists(archivo_sunat) else '❌ NO ENCONTRADO'}")
+    sys.exit(1)
 
-# --- Merge con SUNAT ---
-df_final = df_merge.merge(
-    df_sunat[["DNI", "NOMBRE_SUNAT", "ESTADO_SUNAT"]],
+df_base = pd.read_excel(archivo_temp)
+df_sunat = pd.read_excel(archivo_sunat, sheet_name=hoja_sunat)
+
+# Normalizar nombres de columnas y DNI
+df_base.columns = df_base.columns.str.strip().str.replace("\n", "")
+df_sunat.columns = df_sunat.columns.str.strip().str.replace("\n", "")
+
+df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
+df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)
+
+# Merge y eliminación de duplicados de columnas
+cols_sunat = [c for c in df_sunat.columns if c not in df_base.columns or c == "DNI"]
+df_final = df_base.merge(
+    df_sunat[cols_sunat],
     on="DNI",
     how="left"
 )
-print(df_final.columns.tolist())
 
-# --- Construir nombre completo desde CIERRE ---
-df_final["NOMBRE_COMPLETO_EXCEL"] = (
-    df_final["Nombres completos"].astype(str).str.strip() + " " +
-    df_final["Apellidos completos"].astype(str).str.strip()
-).str.upper().str.replace(r"\s+", " ", regex=True)
+# === FILTRO: Solo los que tienen ESTADO_SUNAT OK y OBS_FECHA_INICIO COINCIDEN ===
+df_filtrado = df_final[
+    (df_final.get("ESTADO_SUNAT", "") == "✅ OK") &
+    (df_final.get("OBS_FECHA_INICIO", "") == "COINCIDEN")
+].copy()
 
-df_final["NOMBRE_SUNAT_NORMALIZADO"] = (
-    df_final["NOMBRE_SUNAT"].astype(str).str.upper().str.strip().str.replace(r"\s+", " ", regex=True)
-)
+# === CONCATENACIÓN Y NORMALIZACIÓN DE NOMBRES ===
+# Crear columnas nuevas al final y en orden
+nuevas_columnas = []
 
-# --- Comparar nombres ignorando orden ---
-def nombres_coinciden(nombre1, nombre2):
+# NOMBRE_COMPLETO_EXCEL
+if col_nombres in df_filtrado.columns and col_apellidos in df_filtrado.columns:
+    nombre_completo_excel = (
+        df_filtrado[col_nombres].astype(str).str.strip() + " " +
+        df_filtrado[col_apellidos].astype(str).str.strip()
+    ).str.upper().str.replace(r"\s+", " ", regex=True)
+    df_filtrado["NOMBRE_COMPLETO_EXCEL"] = nombre_completo_excel
+else:
+    df_filtrado["NOMBRE_COMPLETO_EXCEL"] = ""
+nuevas_columnas.append("NOMBRE_COMPLETO_EXCEL")
+
+# NOMBRE_SUNAT_NORMALIZADO
+if "NOMBRE_SUNAT" in df_filtrado.columns:
+    nombre_sunat_norm = (
+        df_filtrado["NOMBRE_SUNAT"].astype(str).str.upper().str.strip().str.replace(r"\s+", " ", regex=True)
+    )
+    df_filtrado["NOMBRE_SUNAT_NORMALIZADO"] = nombre_sunat_norm
+else:
+    df_filtrado["NOMBRE_SUNAT_NORMALIZADO"] = ""
+nuevas_columnas.append("NOMBRE_SUNAT_NORMALIZADO")
+
+# NOMBRE_COMPLETO_EXCEL_NORMALIZADO
+df_filtrado["NOMBRE_COMPLETO_EXCEL_NORMALIZADO"] = df_filtrado["NOMBRE_COMPLETO_EXCEL"].apply(normalizar_nombre)
+nuevas_columnas.append("NOMBRE_COMPLETO_EXCEL_NORMALIZADO")
+
+# NOMBRE_SUNAT_ORDENADO
+df_filtrado["NOMBRE_SUNAT_ORDENADO"] = df_filtrado["NOMBRE_SUNAT_NORMALIZADO"].apply(normalizar_nombre)
+nuevas_columnas.append("NOMBRE_SUNAT_ORDENADO")
+
+# OBS_NOMBRE_SUNAT
+def comparar_nombres(row):
+    nombre1 = row["NOMBRE_COMPLETO_EXCEL_NORMALIZADO"]
+    nombre2 = row["NOMBRE_SUNAT_ORDENADO"]
     if not nombre1 or not nombre2:
         return "INCOMPLETO"
-    def normalizar(txt):
-        txt = unicodedata.normalize("NFD", txt)
-        txt = "".join(c for c in txt if unicodedata.category(c) != "Mn")
-        return txt.upper().strip()
-    set1, set2 = set(normalizar(nombre1).split()), set(normalizar(nombre2).split())
-    return "COINCIDEN" if set1 == set2 else "NO COINCIDEN"
+    return "COINCIDEN" if nombre1 == nombre2 else "NO COINCIDEN"
 
-df_final["OBS_NOMBRE_SUNAT"] = df_final.apply(
-    lambda row: nombres_coinciden(row["NOMBRE_COMPLETO_EXCEL"], row["NOMBRE_SUNAT_NORMALIZADO"]),
-    axis=1
-)
+df_filtrado["OBS_NOMBRE_SUNAT"] = df_filtrado.apply(comparar_nombres, axis=1)
+nuevas_columnas.append("OBS_NOMBRE_SUNAT")
 
-# --- Seleccionar columnas en el orden final ---
-columnas_finales = [
-    "Id","Hora de inicio","Hora de finalización","Correo electrónico","Nombre",
-    "Nombres completos","Apellidos completos","DNI","Celular de contacto:","Correo electrónico:",
-    "¿Qué rol desarrollaste dentro de la organización?","Fecha de desvinculación a Crea+ Perú:",
-    "Fecha de vinculación a Crea+ Perú:","¿Cuál fue el motivo de tu salida?","Capacitación inicial",
-    "Acompañamiento y apoyo  de los líderes durante el voluntariado","Claridad en las tareas asignadas",
-    "Recursos y herramientas disponibles","Ambiente de trabajo","Motivación recibida en la Asamblea de Impacto",
-    "Puntualidad en la asistencia a actividades y reuniones","Satisfacción general con la experiencia",
-    "¿Qué aprendiste durante tu voluntariado?","¿Qué mejorarías para futuros voluntarios?",
-    "¿Recomendarías este programa de voluntariado a otras personas?","¿Te gustaría seguir vinculado a la organización?",
-    "Protección de datos","REGISTRO DE ENTREGA",col_fecha_bienvenida,"OBS_FECHA_INICIO",
-    "OBS_NOMBRE_SUNAT","NOMBRE_SUNAT","ESTADO_SUNAT"
-]
+# === REORDENAR COLUMNAS: NUEVAS COLUMNAS AL FINAL EN ORDEN ===
+otras = [c for c in df_filtrado.columns if c not in nuevas_columnas]
+df_filtrado = df_filtrado[otras + nuevas_columnas]
 
-df_salida = df_final[columnas_finales].copy()
-
-# --- Guardar resultado único ---
+# === GUARDAR RESULTADO FINAL ===
 fecha_archivo = datetime.now().strftime("%Y-%m-%d_%H-%M")
-archivo_resultado = f"TEST_salida/TEST_resultado_comparacion_{fecha_archivo}.xlsx"
-df_salida.to_excel(archivo_resultado, index=False)
-
-print(f"✅ Archivo final generado: {archivo_resultado}")
+archivo_resultado = f"{DIR_SALIDA}/DNI_resultado_comparacion_{fecha_archivo}.xlsx"
+df_filtrado.to_excel(archivo_resultado, index=False)
+print(f"✅ Archivo final comparado guardado en: {archivo_resultado}")
