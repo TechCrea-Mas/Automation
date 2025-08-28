@@ -16,7 +16,9 @@ if not lista_archivos:
 ARCHIVO_FILTRADO = max(lista_archivos, key=os.path.getctime)
 print(f"Usando archivo filtrado más reciente: {ARCHIVO_FILTRADO}")
 
-# --- CARGA Y FILTRO DE DATOS ---
+CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
+os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
+
 df = pd.read_excel(ARCHIVO_FILTRADO)
 df_certificados = df[df["CERTIFICADO"] == "SI"]
 
