@@ -62,8 +62,6 @@ jobs:
    # - name: ▶️ Ejecutar Script 3
     #  run: python comparar_con_sunat.py
     
-    
-    
     # 📦 Subir carpeta DEBUG_FOLDER como artefacto
     - name: 📤 Subir carpeta DEBUG_FOLDER
       uses: actions/upload-artifact@v4
@@ -71,12 +69,21 @@ jobs:
         name: debug-folder
         path: DEBUG_FOLDER
     
-    # 9️⃣ Subir archivos finales (Excel + PDFs) a OneDrive
-    - name: ☁️ Subir archivos finales
+ # 9️⃣ Subir Excel final de comparación
+    - name: ☁️ Subir Excel de comparación
       env:
         AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
-        rclone --config rclone.conf copy TEST_salida/ "ondri_a.formularios:a.Formularios/" --include "*.xlsx" --include "*.pdf" --progress 
+        # Solo sube el Excel que comienza con DNI_resultado_comparacion_filtrado_
+        rclone --config rclone.conf copy TEST_salida/ "ondri_a.formularios:a.Formularios/" --include "DNI_resultado_comparacion_filtrado_*.xlsx" --progress
+
+    # 🔟 Subir carpeta con certificados PDF
+    - name: ☁️ Subir certificados PDF
+      env:
+        AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
+      run: |
+        echo "$AUTOMATE_RCLONE" > rclone.conf
+        rclone --config rclone.conf copy TEST_salida/certificados_pdf/ "ondri_a.formularios:a.Formularios/certificados_pdf/" --include "*.pdf" --progress
 
 
