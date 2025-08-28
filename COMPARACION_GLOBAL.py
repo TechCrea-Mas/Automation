@@ -30,22 +30,15 @@ col_apellidos = "Apellidos completos"
 
 # === FUNCIONES DE NORMALIZACIÓN DE NOMBRES ===
 def normalizar_nombre(nombre):
-    """Normaliza el nombre quitando tildes, pasando a mayúsculas, quitando caracteres no alfabéticos,
-    quitando dobles espacios y ordenando las palabras alfabéticamente."""
     if pd.isna(nombre):
         return ''
-    # Convierte a str y mayúsculas
     nombre = str(nombre).upper()
-    # Quita tildes/acentos
     nombre = ''.join(
         c for c in unicodedata.normalize('NFD', nombre)
         if unicodedata.category(c) != 'Mn'
     )
-    # Quita caracteres no alfabéticos excepto espacios
     nombre = ''.join(c for c in nombre if c.isalpha() or c.isspace())
-    # Quita dobles espacios y bordes
     nombre = ' '.join(nombre.split())
-    # Ordena palabras
     palabras = nombre.split()
     palabras.sort()
     return ' '.join(palabras)
@@ -82,7 +75,6 @@ def comparar_fechas(row):
     else:
         return f"{fecha_cierre} ≠ {fecha_bienvenida}"
 
-# Crear columna de observaciones (al final)
 df_merged["OBS_FECHA_INICIO"] = df_merged.apply(comparar_fechas, axis=1)
 
 # === LECTURA Y CRUCE CON SUNAT ===
@@ -106,7 +98,6 @@ df_sunat.columns = df_sunat.columns.str.strip().str.replace("\n", "")
 df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
 df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)
 
-# Merge y eliminación de duplicados de columnas
 cols_sunat = [c for c in df_sunat.columns if c not in df_base.columns or c == "DNI"]
 df_final = df_base.merge(
     df_sunat[cols_sunat],
@@ -114,43 +105,36 @@ df_final = df_base.merge(
     how="left"
 )
 
-# === FILTRO: Solo los que tienen ESTADO_SUNAT OK y OBS_FECHA_INICIO COINCIDEN ===
-df_filtrado = df_final[
-    (df_final.get("ESTADO_SUNAT", "") == "✅ OK") &
-    (df_final.get("OBS_FECHA_INICIO", "") == "COINCIDEN")
-].copy()
-
-# === CONCATENACIÓN Y NORMALIZACIÓN DE NOMBRES ===
-# Crear columnas nuevas al final y en orden
+# === CONCATENACIÓN Y NORMALIZACIÓN DE NOMBRES (EN TODOS LOS REGISTROS) ===
 nuevas_columnas = []
 
 # NOMBRE_COMPLETO_EXCEL
-if col_nombres in df_filtrado.columns and col_apellidos in df_filtrado.columns:
+if col_nombres in df_final.columns and col_apellidos in df_final.columns:
     nombre_completo_excel = (
-        df_filtrado[col_nombres].astype(str).str.strip() + " " +
-        df_filtrado[col_apellidos].astype(str).str.strip()
+        df_final[col_nombres].astype(str).str.strip() + " " +
+        df_final[col_apellidos].astype(str).str.strip()
     ).str.upper().str.replace(r"\s+", " ", regex=True)
-    df_filtrado["NOMBRE_COMPLETO_EXCEL"] = nombre_completo_excel
+    df_final["NOMBRE_COMPLETO_EXCEL"] = nombre_completo_excel
 else:
-    df_filtrado["NOMBRE_COMPLETO_EXCEL"] = ""
+    df_final["NOMBRE_COMPLETO_EXCEL"] = ""
 nuevas_columnas.append("NOMBRE_COMPLETO_EXCEL")
 
 # NOMBRE_SUNAT_NORMALIZADO
-if "NOMBRE_SUNAT" in df_filtrado.columns:
+if "NOMBRE_SUNAT" in df_final.columns:
     nombre_sunat_norm = (
-        df_filtrado["NOMBRE_SUNAT"].astype(str).str.upper().str.strip().str.replace(r"\s+", " ", regex=True)
+        df_final["NOMBRE_SUNAT"].astype(str).str.upper().str.strip().str.replace(r"\s+", " ", regex=True)
     )
-    df_filtrado["NOMBRE_SUNAT_NORMALIZADO"] = nombre_sunat_norm
+    df_final["NOMBRE_SUNAT_NORMALIZADO"] = nombre_sunat_norm
 else:
-    df_filtrado["NOMBRE_SUNAT_NORMALIZADO"] = ""
+    df_final["NOMBRE_SUNAT_NORMALIZADO"] = ""
 nuevas_columnas.append("NOMBRE_SUNAT_NORMALIZADO")
 
 # NOMBRE_COMPLETO_EXCEL_NORMALIZADO
-df_filtrado["NOMBRE_COMPLETO_EXCEL_NORMALIZADO"] = df_filtrado["NOMBRE_COMPLETO_EXCEL"].apply(normalizar_nombre)
+df_final["NOMBRE_COMPLETO_EXCEL_NORMALIZADO"] = df_final["NOMBRE_COMPLETO_EXCEL"].apply(normalizar_nombre)
 nuevas_columnas.append("NOMBRE_COMPLETO_EXCEL_NORMALIZADO")
 
 # NOMBRE_SUNAT_ORDENADO
-df_filtrado["NOMBRE_SUNAT_ORDENADO"] = df_filtrado["NOMBRE_SUNAT_NORMALIZADO"].apply(normalizar_nombre)
+df_final["NOMBRE_SUNAT_ORDENADO"] = df_final["NOMBRE_SUNAT_NORMALIZADO"].apply(normalizar_nombre)
 nuevas_columnas.append("NOMBRE_SUNAT_ORDENADO")
 
 # OBS_NOMBRE_SUNAT
@@ -161,15 +145,25 @@ def comparar_nombres(row):
         return "INCOMPLETO"
     return "COINCIDEN" if nombre1 == nombre2 else "NO COINCIDEN"
 
-df_filtrado["OBS_NOMBRE_SUNAT"] = df_filtrado.apply(comparar_nombres, axis=1)
+df_final["OBS_NOMBRE_SUNAT"] = df_final.apply(comparar_nombres, axis=1)
 nuevas_columnas.append("OBS_NOMBRE_SUNAT")
 
-# === REORDENAR COLUMNAS: NUEVAS COLUMNAS AL FINAL EN ORDEN ===
-otras = [c for c in df_filtrado.columns if c not in nuevas_columnas]
-df_filtrado = df_filtrado[otras + nuevas_columnas]
+# === COLUMNA CERTIFICADO SEGÚN CONDICIÓN DE COINCIDEN EN AMBAS OBSERVACIONES ===
+def certificado_condicion(row):
+    if row.get("OBS_FECHA_INICIO") == "COINCIDEN" and row.get("OBS_NOMBRE_SUNAT") == "COINCIDEN":
+        return "SI"
+    else:
+        return "NO"
 
-# === GUARDAR RESULTADO FINAL ===
+df_final["CERTIFICADO"] = df_final.apply(certificado_condicion, axis=1)
+nuevas_columnas.append("CERTIFICADO")
+
+# === REORDENAR COLUMNAS: NUEVAS COLUMNAS AL FINAL EN ORDEN ===
+otras = [c for c in df_final.columns if c not in nuevas_columnas]
+df_final = df_final[otras + nuevas_columnas]
+
+# === GUARDAR RESULTADO FINAL (TODOS LOS REGISTROS) ===
 fecha_archivo = datetime.now().strftime("%Y-%m-%d_%H-%M")
 archivo_resultado = f"{DIR_SALIDA}/DNI_resultado_comparacion_{fecha_archivo}.xlsx"
-df_filtrado.to_excel(archivo_resultado, index=False)
+df_final.to_excel(archivo_resultado, index=False)
 print(f"✅ Archivo final comparado guardado en: {archivo_resultado}")
