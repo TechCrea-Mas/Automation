@@ -5,10 +5,16 @@ from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import os
 
-# --- CONFIGURACIONES ---
-ARCHIVO_FILTRADO = "TEST_salida/DNI_resultado_comparacion_filtrado_YYYY-MM-DD_HH-MM.xlsx"  # cambia por el nombre real generado
-CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
-os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
+import os
+import glob
+import pandas as pd
+
+# Buscar el archivo filtrado más reciente automáticamente
+lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
+if not lista_archivos:
+    raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
+ARCHIVO_FILTRADO = max(lista_archivos, key=os.path.getctime)
+print(f"Usando archivo filtrado más reciente: {ARCHIVO_FILTRADO}")
 
 # --- CARGA Y FILTRO DE DATOS ---
 df = pd.read_excel(ARCHIVO_FILTRADO)
