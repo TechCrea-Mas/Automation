@@ -45,6 +45,10 @@ jobs:
     # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
     - name: ▶️ Ejecutar Script 1
       run: python COMPARACION_GLOBAL.py
+      
+    # 7️⃣ Ejecutar Script 2 (test certificado)
+    - name: ▶️ Ejecutar Script 2
+      run: python certificados.py
     
     # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
    # - name: ▶️ Ejecutar Script 1
