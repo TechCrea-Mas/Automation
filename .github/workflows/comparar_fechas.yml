@@ -71,12 +71,12 @@ jobs:
         name: debug-folder
         path: DEBUG_FOLDER
     
-    # 9️⃣ Subir archivo final a OneDrive
-    - name: ☁️ Subir archivo final
+    # 9️⃣ Subir archivos finales (Excel + PDFs) a OneDrive
+    - name: ☁️ Subir archivos finales
       env:
         AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
-        rclone --config rclone.conf copy TEST_salida/ "ondri_a.formularios:a.Formularios/" --include "*.xlsx" --progress
+        rclone --config rclone.conf copy TEST_salida/ "ondri_a.formularios:a.Formularios/" --include "*.xlsx" --include "*.pdf" --progress 
 
 
