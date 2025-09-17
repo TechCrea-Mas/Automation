@@ -1,13 +1,10 @@
 import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import os
-
-import os
 import glob
-import pandas as pd
+from dateutil.relativedelta import relativedelta  # útil para meses y días
 
 # Buscar el archivo filtrado más reciente automáticamente
 lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
@@ -27,12 +24,31 @@ campos = [
     "NOMBRE_SUNAT",
     "DNI",
     "Fecha de vinculación a Crea+ Perú:",
-    "Fecha de desvinculación a Crea+ Perú:"
+    "Fecha de desvinculación a Crea+ Perú:",
     "¿Qué rol desarrollaste dentro de la organización?",
-    # Si tienes campos de horas/meses, agrégalos aquí:
-    # "X horas / X meses"
 ]
 
+# Función para calcular meses y días de voluntariado
+def calcular_tiempo(inicio, fin):
+    inicio = pd.to_datetime(inicio, dayfirst=True, errors="coerce")
+    fin = pd.to_datetime(fin, dayfirst=True, errors="coerce")
+    if pd.isna(inicio) or pd.isna(fin):
+        return "un periodo no especificado"
+    
+    diff = relativedelta(fin, inicio)
+    meses = diff.years * 12 + diff.months
+    dias = diff.days
+    
+    if meses > 0 and dias > 0:
+        return f"{meses} meses y {dias} días de voluntariado"
+    elif meses > 0:
+        return f"{meses} meses de voluntariado"
+    elif dias > 0:
+        return f"{dias} días de voluntariado"
+    else:
+        return "menos de 1 día de voluntariado"
+
+# Fecha actual formateada
 def formato_fecha_actual():
     meses = [
         "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -54,29 +70,31 @@ def generar_pdf(data, nombre_archivo):
     c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(width/2, height-margen-40, "CERTIFICADO DE VOLUNTARIADO")
 
+    # Calcular tiempo
+    tiempo_voluntariado = calcular_tiempo(
+        data["Fecha de vinculación a Crea+ Perú:"],
+        data["Fecha de desvinculación a Crea+ Perú:"]
+    )
+
     # Cuerpo del certificado
     c.setFont("Helvetica", 12)
     y = height-margen-80
-    texto = (f'CREA MÁS PERU (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta '
-             'por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través '
-             'de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento '
-             'a través de un voluntariado profesional.\n\n'
-             f'Mediante el presente, Crea+ deja constancia que "{data["NOMBRE_SUNAT"]}" con DNI "{data["DNI"]}", '
-             f'participó como voluntaria/o desde el "{data["Fecha de vinculación a Crea+ Perú:"]}"al "{data["Fecha de desvinculación a Crea+ Perú:"]}"  en el rol de '
-             f'"{data["¿Qué rol desarrollaste dentro de la organización?"]}" cumpliendo con {data["8 mess.... "]} de voluntariado'
-             # Puedes agregar aquí cálculo de horas/meses si tienes los datos
-             '\n\nCertificamos que "{data["NOMBRE_SUNAT"]}" demostró responsabilidad y compromiso en el desarrollo de sus funciones.\n\n'
-             'Se expide el presente certificado para los fines que se estimen convenientes.\n\n'
-             'Atentamente,'
+    texto = (
+        f'CREA MÁS PERU (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta '
+        'por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través '
+        'de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento '
+        'a través de un voluntariado profesional.\n\n'
+        f'Mediante el presente, Crea+ deja constancia que "{data["NOMBRE_SUNAT"]}" con DNI "{data["DNI"]}", '
+        f'participó como voluntaria/o desde el "{data["Fecha de vinculación a Crea+ Perú:"]}" al "{data["Fecha de desvinculación a Crea+ Perú:"]}" '
+        f'en el rol de "{data["¿Qué rol desarrollaste dentro de la organización?"]}" cumpliendo con {tiempo_voluntariado}.\n\n'
+        f'Certificamos que "{data["NOMBRE_SUNAT"]}" demostró responsabilidad y compromiso en el desarrollo de sus funciones.\n\n'
+        'Se expide el presente certificado para los fines que se estimen convenientes.\n\n'
+        'Atentamente,'
     )
 
     for linea in texto.split('\n'):
         c.drawString(margen, y, linea)
         y -= 18
-
-    # Firma opcional: puedes añadir imagen de firma/logo si lo deseas
-    # firma = ImageReader("firma.png")
-    # c.drawImage(firma, margen, y-50, width=150, height=50, mask='auto')
 
     c.showPage()
     c.save()
