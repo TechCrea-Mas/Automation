@@ -14,7 +14,7 @@ DIR_SALIDA = "TEST_salida"
 Path(DIR_SALIDA).mkdir(exist_ok=True)
 
 # Archivos de entrada
-archivo_cierre = "data/¡Gracias por ser parte de Crea+Perú! 💙_Cierre de rol..xlsx"
+archivo_cierre = "data/Forms Cierre de Voluntariado.xlsx"
 archivo_bienvenida = "data/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx"
 archivo_sunat = "data/DNI_OBS.xlsx"
 
