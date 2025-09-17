@@ -27,6 +27,7 @@ campos = [
     "NOMBRE_SUNAT",
     "DNI",
     "Fecha de vinculación a Crea+ Perú:",
+    "Fecha de desvinculación a Crea+ Perú:"
     "¿Qué rol desarrollaste dentro de la organización?",
     # Si tienes campos de horas/meses, agrégalos aquí:
     # "X horas / X meses"
@@ -61,8 +62,8 @@ def generar_pdf(data, nombre_archivo):
              'de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento '
              'a través de un voluntariado profesional.\n\n'
              f'Mediante el presente, Crea+ deja constancia que "{data["NOMBRE_SUNAT"]}" con DNI "{data["DNI"]}", '
-             f'participó como parte del equipo desde el "{data["Fecha de vinculación a Crea+ Perú:"]}" en el rol de '
-             f'"{data["¿Qué rol desarrollaste dentro de la organización?"]}". '
+             f'participó como voluntaria/o desde el "{data["Fecha de vinculación a Crea+ Perú:"]}"al "{data["Fecha de desvinculación a Crea+ Perú:"]}"  en el rol de '
+             f'"{data["¿Qué rol desarrollaste dentro de la organización?"]}" cumpliendo con {data["8 mess.... "]} de voluntariado'
              # Puedes agregar aquí cálculo de horas/meses si tienes los datos
              '\n\nCertificamos que "{data["NOMBRE_SUNAT"]}" demostró responsabilidad y compromiso en el desarrollo de sus funciones.\n\n'
              'Se expide el presente certificado para los fines que se estimen convenientes.\n\n'
