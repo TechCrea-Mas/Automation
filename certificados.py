@@ -95,13 +95,7 @@ def generar_pdf(data, nombre_archivo):
         elementos.append(Image("firma.png", width=120, height=60))
     elementos.append(Paragraph("Diego Cabrera Zárate<br/>Coordinador de Gestión de Talento Humano", styles["Firma"]))
 
-    # --- Pie de página con íconos ---
-    elementos.append(Spacer(1, 100))
-    data_pie = [[
-        Image("icon_mail.png", 10, 10), " direccion@creamas.org   ",
-        Image("icon_phone.png", 10, 10), " +51 222 025 647   ",
-        Image("icon_web.png", 10, 10), " www.creamas.org"
-    ]]
+
     tabla_pie = Table(data_pie)
     tabla_pie.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#2F2DCC")),
