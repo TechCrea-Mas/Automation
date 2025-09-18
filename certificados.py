@@ -89,28 +89,24 @@ def generar_pdf(data, nombre_archivo):
 
     elementos.append(Paragraph(texto, styles["Texto"]))
 
-    # --- Firma + cargo ---
-    elementos.append(Spacer(1, 50))
-    if os.path.exists("firma.png"):
-        elementos.append(Image("firma.png", width=120, height=60))
-    elementos.append(Paragraph("Diego Cabrera Zárate<br/>Coordinador de Gestión de Talento Humano", styles["Firma"]))
+    # --- Pie de página (simulado) ---
+    data_pie = [
+        [Paragraph("Firma Responsable", styles["Normal"]), Paragraph("Sello", styles["Normal"])]
+    ]
 
-
-    tabla_pie = Table(data_pie)
+    tabla_pie = Table(data_pie, colWidths=[250, 250])
     tabla_pie.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#2F2DCC")),
-        ("TEXTCOLOR", (0,0), (-1,-1), colors.white),
+        ("BOX", (0,0), (-1,-1), 1, colors.black),
+        ("INNERGRID", (0,0), (-1,-1), 0.5, colors.grey),
         ("ALIGN", (0,0), (-1,-1), "CENTER"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("FONTSIZE", (0,0), (-1,-1), 9),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-        ("TOPPADDING", (0,0), (-1,-1), 6),
     ]))
+
+    elementos.append(Spacer(1, 50))  # espacio antes del pie
     elementos.append(tabla_pie)
 
     # --- Exportar PDF ---
     doc.build(elementos)
-    print(f"✅ Certificado generado: {nombre_archivo}")
 
 # =====================
 # Bucle principal
@@ -130,3 +126,4 @@ for _, row in df_certificados.iterrows():
     nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
     nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
     generar_pdf(row, nombre_pdf)
+
