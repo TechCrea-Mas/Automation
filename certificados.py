@@ -1,34 +1,18 @@
 import pandas as pd
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib import colors
 from datetime import datetime
-import os
-import glob
-from dateutil.relativedelta import relativedelta  # útil para meses y días
+from dateutil.relativedelta import relativedelta
+import os, glob
 
-# Buscar el archivo filtrado más reciente automáticamente
-lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
-if not lista_archivos:
-    raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
-ARCHIVO_FILTRADO = max(lista_archivos, key=os.path.getctime)
-print(f"Usando archivo filtrado más reciente: {ARCHIVO_FILTRADO}")
-
-CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
-os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
-
-df = pd.read_excel(ARCHIVO_FILTRADO)
-df_certificados = df[df["CERTIFICADO"] == "SI"]
-
-# --- CAMPOS USADOS ---
-campos = [
-    "NOMBRE_SUNAT",
-    "DNI",
-    "Fecha de vinculación a Crea+ Perú:",
-    "Fecha de desvinculación a Crea+ Perú:",
-    "¿Qué rol desarrollaste dentro de la organización?",
-]
-
-# Función para calcular meses y días de voluntariado
+# =====================
+# Funciones auxiliares
+# =====================
 def calcular_tiempo(inicio, fin):
     inicio = pd.to_datetime(inicio, dayfirst=True, errors="coerce")
     fin = pd.to_datetime(fin, dayfirst=True, errors="coerce")
@@ -48,7 +32,6 @@ def calcular_tiempo(inicio, fin):
     else:
         return "menos de 1 día de voluntariado"
 
-# Fecha actual formateada
 def formato_fecha_actual():
     meses = [
         "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -57,51 +40,99 @@ def formato_fecha_actual():
     hoy = datetime.today()
     return f"Lima, {hoy.day} de {meses[hoy.month-1]} de {hoy.year}"
 
+# =====================
+# Función principal
+# =====================
 def generar_pdf(data, nombre_archivo):
-    c = canvas.Canvas(nombre_archivo, pagesize=A4)
-    width, height = A4
-    margen = 40
+    doc = SimpleDocTemplate(nombre_archivo, pagesize=A4,
+                            rightMargin=50, leftMargin=50,
+                            topMargin=50, bottomMargin=50)
+    elementos = []
 
-    # Encabezado derecho
-    c.setFont("Helvetica", 10)
-    c.drawRightString(width-margen, height-margen, formato_fecha_actual())
+    # --- Estilos ---
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="Titulo", alignment=TA_CENTER, fontSize=14, spaceAfter=20, leading=16))
+    styles.add(ParagraphStyle(name="Texto", alignment=TA_JUSTIFY, fontSize=11, leading=15))
+    styles.add(ParagraphStyle(name="Firma", alignment=TA_CENTER, fontSize=11, spaceBefore=40))
 
-    # Título central
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width/2, height-margen-40, "CERTIFICADO DE VOLUNTARIADO")
+    # --- Encabezado con logo ---
+    if os.path.exists("logo_crea.png"):
+        elementos.append(Image("logo_crea.png", width=120, height=40))
+    elementos.append(Spacer(1, 20))
 
-    # Calcular tiempo
+    # --- Fecha ---
+    elementos.append(Paragraph(formato_fecha_actual(), styles["Normal"]))
+    elementos.append(Spacer(1, 20))
+
+    # --- Título ---
+    elementos.append(Paragraph("CERTIFICADO DE VOLUNTARIADO", styles["Titulo"]))
+
+    # --- Texto principal ---
     tiempo_voluntariado = calcular_tiempo(
         data["Fecha de vinculación a Crea+ Perú:"],
         data["Fecha de desvinculación a Crea+ Perú:"]
     )
 
-    # Cuerpo del certificado
-    c.setFont("Helvetica", 12)
-    y = height-margen-80
     texto = (
-        f'CREA MÁS PERU (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta '
-        'por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través '
-        'de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento '
-        'a través de un voluntariado profesional.\n\n'
-        f'Mediante el presente, Crea+ deja constancia que "{data["NOMBRE_SUNAT"]}" con DNI "{data["DNI"]}", '
-        f'participó como voluntaria/o desde el "{data["Fecha de vinculación a Crea+ Perú:"]}" al "{data["Fecha de desvinculación a Crea+ Perú:"]}" '
-        f'en el rol de "{data["¿Qué rol desarrollaste dentro de la organización?"]}" cumpliendo con {tiempo_voluntariado}.\n\n'
-        f'Certificamos que "{data["NOMBRE_SUNAT"]}" demostró responsabilidad y compromiso en el desarrollo de sus funciones.\n\n'
-        'Se expide el presente certificado para los fines que se estimen convenientes.\n\n'
-        'Atentamente,'
+        "CREA MÁS PERU (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta "
+        "por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través "
+        "de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para "
+        "el crecimiento a través de un voluntariado profesional.<br/><br/>"
+        f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> con DNI <b>{data['DNI']}</b>, "
+        f"participó como voluntaria/o desde el <b>{data['Fecha de vinculación a Crea+ Perú:']}</b> "
+        f"al <b>{data['Fecha de desvinculación a Crea+ Perú:']}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, "
+        f"cumpliendo con {tiempo_voluntariado}.<br/><br/>"
+        f"Certificamos que <b>{data['NOMBRE_SUNAT']}</b> demostró responsabilidad y compromiso en el desarrollo de sus funciones.<br/><br/>"
+        "Se expide el presente certificado para los fines que se estimen convenientes.<br/><br/>"
+        "Atentamente,"
     )
 
-    for linea in texto.split('\n'):
-        c.drawString(margen, y, linea)
-        y -= 18
+    elementos.append(Paragraph(texto, styles["Texto"]))
 
-    c.showPage()
-    c.save()
+    # --- Firma + cargo ---
+    elementos.append(Spacer(1, 50))
+    if os.path.exists("firma.png"):
+        elementos.append(Image("firma.png", width=120, height=60))
+    elementos.append(Paragraph("Diego Cabrera Zárate<br/>Coordinador de Gestión de Talento Humano", styles["Firma"]))
 
-# --- GENERACIÓN DE PDFS ---
-for idx, row in df_certificados.iterrows():
+    # --- Pie de página con íconos ---
+    elementos.append(Spacer(1, 100))
+    data_pie = [[
+        Image("icon_mail.png", 10, 10), " direccion@creamas.org   ",
+        Image("icon_phone.png", 10, 10), " +51 222 025 647   ",
+        Image("icon_web.png", 10, 10), " www.creamas.org"
+    ]]
+    tabla_pie = Table(data_pie)
+    tabla_pie.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#2F2DCC")),
+        ("TEXTCOLOR", (0,0), (-1,-1), colors.white),
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("FONTSIZE", (0,0), (-1,-1), 9),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+    ]))
+    elementos.append(tabla_pie)
+
+    # --- Exportar PDF ---
+    doc.build(elementos)
+    print(f"✅ Certificado generado: {nombre_archivo}")
+
+# =====================
+# Bucle principal
+# =====================
+lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
+if not lista_archivos:
+    raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
+ARCHIVO_FILTRADO = max(lista_archivos, key=os.path.getctime)
+
+df = pd.read_excel(ARCHIVO_FILTRADO)
+df_certificados = df[df["CERTIFICADO"] == "SI"]
+
+CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
+os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
+
+for _, row in df_certificados.iterrows():
     nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
     nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
     generar_pdf(row, nombre_pdf)
-    print(f"✅ Certificado generado: {nombre_pdf}")
