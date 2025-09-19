@@ -3,7 +3,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Paragraph, Frame
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import pandas as pd
 import os, glob
 from datetime import datetime
@@ -54,35 +54,43 @@ def generar_pdf(data, nombre_archivo):
     w, h = A4
     c = canvas.Canvas(nombre_archivo, pagesize=A4)
 
-    # Fondo con la plantilla (usar JPG para evitar fondo negro)
+    # Fondo con la plantilla institucional (JPG recomendado)
     plantilla_path = "plantilla_certificado.jpg"
     if os.path.exists(plantilla_path):
         fondo = ImageReader(plantilla_path)
         c.drawImage(fondo, 0, 0, width=w, height=h)
 
+    # Logo institucional (ajusta posición y tamaño)
+    logo_path = "assets/logo_crea.png"
+    if os.path.exists(logo_path):
+        logo = ImageReader(logo_path)
+        c.drawImage(logo, w/2-75, h-110, width=150, height=50, mask='auto')
+
     # Fecha actual
     c.setFont("Helvetica", 12)
-    c.drawString(w-250, h-100, formato_fecha_actual())
+    c.drawString(w-250, h-140, formato_fecha_actual())
 
-    # Texto dinámico principal
-    fecha_vinculacion = fecha_en_palabras(data["Fecha de vinculación a Crea+ Perú:"])
-    fecha_desvinculacion = fecha_en_palabras(data["Fecha de desvinculación a Crea+ Perú:"])
-    tiempo_voluntariado = calcular_tiempo(
-        data["Fecha de vinculación a Crea+ Perú:"],
-        data["Fecha de desvinculación a Crea+ Perú:"]
+    # Título centrado
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(w/2, h-170, "CERTIFICADO DE VOLUNTARIADO")
+
+    # Texto institucional
+    texto_intro = (
+        "<b>CREA MÁS PERÚ</b> (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta "
+        "por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento a través de un voluntariado profesional."
     )
 
-    texto = (
+    texto_principal = (
         f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> "
-        f"con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_vinculacion}</b> "
-        f"al <b>{fecha_desvinculacion}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, "
-        f"cumpliendo con {tiempo_voluntariado}."
+        f"con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_en_palabras(data['Fecha de vinculación a Crea+ Perú:'])}</b> "
+        f"al <b>{fecha_en_palabras(data['Fecha de desvinculación a Crea+ Perú:'])}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, "
+        f"cumpliendo con {calcular_tiempo(data['Fecha de vinculación a Crea+ Perú:'],data['Fecha de desvinculación a Crea+ Perú:'])}."
     )
 
-    # Texto para reemplazar lo amarillo
-    texto2 = (
-        f"Certificamos que <b>{data['NOMBRE_SUNAT']}</b> demostró responsabilidad y "
-        f"compromiso en el desarrollo de sus funciones."
+    texto_final = (
+        f"Certificamos que <b>{data['NOMBRE_SUNAT']}</b> demostró responsabilidad y compromiso en el desarrollo de sus funciones.<br/><br/>"
+        "Se expide el presente certificado para los fines que se estimen convenientes.<br/><br/>"
+        "Atentamente,"
     )
 
     # Estilos
@@ -92,20 +100,29 @@ def generar_pdf(data, nombre_archivo):
     styleN.fontSize = 12
     styleN.leading = 16
 
-    # Párrafo 1
-    P = Paragraph(texto, styleN)
-    frame = Frame(70, h/2-80, w-140, 200, showBoundary=0)
-    frame.addFromList([P], c)
+    # Marco para los párrafos (ajusta posición y tamaño según plantilla)
+    frame_textos = Frame(70, h-350, w-140, 130, showBoundary=0)
+    P_intro = Paragraph(texto_intro, styleN)
+    P_principal = Paragraph(texto_principal, styleN)
+    frame_textos.addFromList([P_intro, Spacer(1,12), P_principal], c)
 
-    # Párrafo 2 (reemplazo de amarillo)
-    P2 = Paragraph(texto2, styleN)
-    frame2 = Frame(70, h/2-160, w-140, 100, showBoundary=0)
-    frame2.addFromList([P2], c)
+    frame_final = Frame(70, h-440, w-140, 80, showBoundary=0)
+    P_final = Paragraph(texto_final, styleN)
+    frame_final.addFromList([P_final], c)
 
-    # Firma
+    # Firma + sello (ajusta posiciones y tamaños según plantilla)
+    firma_path = "assets/firma.png"
+    sello_path = "assets/pie_pagina.png"
+    if os.path.exists(firma_path):
+        c.drawImage(firma_path, w/2-120, 125, width=90, height=45, mask='auto')
+    if os.path.exists(sello_path):
+        c.drawImage(sello_path, w/2+30, 125, width=90, height=45, mask='auto')
+
+    # Nombre y cargo
     c.setFont("Helvetica-Bold", 11)
-    c.drawCentredString(w/2, 120, "Diego Cabrera Zanatta")
-    c.drawCentredString(w/2, 105, "Coordinador de Gestión de Talento Humano")
+    c.drawCentredString(w/2, 110, "Diego Cabrera Zanatta")
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(w/2, 97, "Coordinador de Gestión de Talento Humano")
 
     c.save()
 
