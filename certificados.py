@@ -1,4 +1,4 @@
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
@@ -64,7 +64,7 @@ def generar_pdf(data, nombre_archivo):
     c.setFont("Helvetica", 12)
     c.drawString(w-250, h-100, formato_fecha_actual())
 
-    # Texto dinámico
+    # Texto dinámico principal
     fecha_vinculacion = fecha_en_palabras(data["Fecha de vinculación a Crea+ Perú:"])
     fecha_desvinculacion = fecha_en_palabras(data["Fecha de desvinculación a Crea+ Perú:"])
     tiempo_voluntariado = calcular_tiempo(
@@ -79,18 +79,30 @@ def generar_pdf(data, nombre_archivo):
         f"cumpliendo con {tiempo_voluntariado}."
     )
 
-    # Párrafo centrado en el área de texto
+    # Texto para reemplazar lo amarillo
+    texto2 = (
+        f"Certificamos que <b>{data['NOMBRE_SUNAT']}</b> demostró responsabilidad y "
+        f"compromiso en el desarrollo de sus funciones."
+    )
+
+    # Estilos
     styles = getSampleStyleSheet()
     styleN = styles["Normal"]
     styleN.fontName = "Helvetica"
     styleN.fontSize = 12
     styleN.leading = 16
 
+    # Párrafo 1
     P = Paragraph(texto, styleN)
-    frame = Frame(70, h/2-80, w-140, 200, showBoundary=0)  # caja de texto central
+    frame = Frame(70, h/2-80, w-140, 200, showBoundary=0)
     frame.addFromList([P], c)
 
-    # Firma (si no está ya en la plantilla)
+    # Párrafo 2 (reemplazo de amarillo)
+    P2 = Paragraph(texto2, styleN)
+    frame2 = Frame(70, h/2-160, w-140, 100, showBoundary=0)
+    frame2.addFromList([P2], c)
+
+    # Firma
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(w/2, 120, "Diego Cabrera Zanatta")
     c.drawCentredString(w/2, 105, "Coordinador de Gestión de Talento Humano")
@@ -115,4 +127,3 @@ for _, row in df_certificados.iterrows():
     nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
     nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
     generar_pdf(row, nombre_pdf)
-
