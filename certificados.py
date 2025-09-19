@@ -1,11 +1,17 @@
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Paragraph, Frame
+from reportlab.lib.styles import getSampleStyleSheet
 import pandas as pd
 import os, glob
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+# ---------------------
+# Funciones auxiliares
+# ---------------------
 def calcular_tiempo(inicio, fin):
     inicio = pd.to_datetime(inicio, dayfirst=True, errors="coerce")
     fin = pd.to_datetime(fin, dayfirst=True, errors="coerce")
@@ -41,17 +47,24 @@ def formato_fecha_actual():
     hoy = datetime.today()
     return f"Lima, {hoy.day} de {meses[hoy.month-1]} del {hoy.year}"
 
+# ---------------------
+# Generador de PDF
+# ---------------------
 def generar_pdf(data, nombre_archivo):
-    # Tamaño A4
     w, h = A4
     c = canvas.Canvas(nombre_archivo, pagesize=A4)
 
-    # --- Fondo plantilla ---
-    plantilla_path = "plantilla_certificado.png"
+    # Fondo con la plantilla (usar JPG para evitar fondo negro)
+    plantilla_path = "plantilla_certificado.jpg"
     if os.path.exists(plantilla_path):
-        c.drawImage(plantilla_path, 0, 0, width=w, height=h)
+        fondo = ImageReader(plantilla_path)
+        c.drawImage(fondo, 0, 0, width=w, height=h)
 
-    # --- Texto dinámico ---
+    # Fecha actual
+    c.setFont("Helvetica", 12)
+    c.drawString(w-250, h-100, formato_fecha_actual())
+
+    # Texto dinámico
     fecha_vinculacion = fecha_en_palabras(data["Fecha de vinculación a Crea+ Perú:"])
     fecha_desvinculacion = fecha_en_palabras(data["Fecha de desvinculación a Crea+ Perú:"])
     tiempo_voluntariado = calcular_tiempo(
@@ -59,24 +72,14 @@ def generar_pdf(data, nombre_archivo):
         data["Fecha de desvinculación a Crea+ Perú:"]
     )
 
-    # Estilo de letra
-    c.setFont("Helvetica", 12)
-
-    # Fecha actual
-    c.drawString(350, h-100, formato_fecha_actual())  # ajusta coordenadas
-
-    # Texto central
     texto = (
-        f"Mediante el presente, Crea+ deja constancia que {data['NOMBRE_SUNAT']} "
-        f"con DNI {data['DNI']}, participó como voluntaria/o desde el {fecha_vinculacion} "
-        f"al {fecha_desvinculacion} en el rol de {data['¿Qué rol desarrollaste dentro de la organización?']}, "
+        f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> "
+        f"con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_vinculacion}</b> "
+        f"al <b>{fecha_desvinculacion}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, "
         f"cumpliendo con {tiempo_voluntariado}."
     )
-    # Ajuste de párrafos
-    from reportlab.platypus import Paragraph
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import Frame
 
+    # Párrafo centrado en el área de texto
     styles = getSampleStyleSheet()
     styleN = styles["Normal"]
     styleN.fontName = "Helvetica"
@@ -84,19 +87,19 @@ def generar_pdf(data, nombre_archivo):
     styleN.leading = 16
 
     P = Paragraph(texto, styleN)
-    frame = Frame(70, h/2-50, w-140, 200, showBoundary=0)  # caja de texto central
+    frame = Frame(70, h/2-80, w-140, 200, showBoundary=0)  # caja de texto central
     frame.addFromList([P], c)
 
-    # Firma (puede ir en la plantilla como imagen)
+    # Firma (si no está ya en la plantilla)
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(w/2, 120, "Diego Cabrera Zanatta")
     c.drawCentredString(w/2, 105, "Coordinador de Gestión de Talento Humano")
 
     c.save()
 
-# =====================
+# ---------------------
 # Bucle principal
-# =====================
+# ---------------------
 lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
 if not lista_archivos:
     raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
@@ -112,3 +115,4 @@ for _, row in df_certificados.iterrows():
     nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
     nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
     generar_pdf(row, nombre_pdf)
+
