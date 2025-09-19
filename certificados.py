@@ -15,11 +15,9 @@ def calcular_tiempo(inicio, fin):
     fin = pd.to_datetime(fin, dayfirst=True, errors="coerce")
     if pd.isna(inicio) or pd.isna(fin):
         return "un periodo no especificado"
-    
     diff = relativedelta(fin, inicio)
     meses = diff.years * 12 + diff.months
     dias = diff.days
-    
     if meses > 0 and dias > 0:
         return f"{meses} meses y {dias} días de voluntariado"
     elif meses > 0:
@@ -49,30 +47,28 @@ def fecha_en_palabras(fecha_str):
 
 def generar_pdf(data, nombre_archivo):
     doc = SimpleDocTemplate(nombre_archivo, pagesize=A4,
-                            rightMargin=50, leftMargin=50,
-                            topMargin=50, bottomMargin=50)
+                            rightMargin=30, leftMargin=30, # Menor margen
+                            topMargin=40, bottomMargin=30)
     elementos = []
 
     # --- Estilos ---
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="Titulo", alignment=TA_CENTER, fontSize=14, spaceAfter=20, leading=16))
-    styles.add(ParagraphStyle(name="Texto", alignment=TA_JUSTIFY, fontSize=11, leading=15))
-    styles.add(ParagraphStyle(name="Firma", alignment=TA_CENTER, fontSize=11, spaceBefore=40))
+    styles.add(ParagraphStyle(name="Titulo", alignment=TA_CENTER, fontSize=16, spaceAfter=24, leading=18))
+    styles.add(ParagraphStyle(name="Texto", alignment=TA_JUSTIFY, fontSize=12, leading=16))
+    styles.add(ParagraphStyle(name="Firma", alignment=TA_CENTER, fontSize=12, spaceBefore=40))
 
-    # --- Encabezado con logo ---
+    # --- Logo ---
     logo_path = "logo_crea.png"
     if os.path.exists(logo_path):
-        elementos.append(Image(logo_path, width=120, height=40))
-    elementos.append(Spacer(1, 20))
+        elementos.append(Image(logo_path, width=150, height=50))
+    elementos.append(Spacer(1, 28))
 
-    # --- Fecha ---
+    # --- Fecha y Título ---
     elementos.append(Paragraph(formato_fecha_actual(), styles["Normal"]))
-    elementos.append(Spacer(1, 20))
-
-    # --- Título ---
+    elementos.append(Spacer(1, 18))
     elementos.append(Paragraph("CERTIFICADO DE VOLUNTARIADO", styles["Titulo"]))
 
-    # --- Texto principal con fechas en palabras ---
+    # --- Texto principal ---
     fecha_vinculacion = fecha_en_palabras(data["Fecha de vinculación a Crea+ Perú:"])
     fecha_desvinculacion = fecha_en_palabras(data["Fecha de desvinculación a Crea+ Perú:"])
     tiempo_voluntariado = calcular_tiempo(
@@ -93,35 +89,31 @@ def generar_pdf(data, nombre_archivo):
         "Se expide el presente certificado para los fines que se estimen convenientes.<br/><br/>"
         "Atentamente,"
     )
-
     elementos.append(Paragraph(texto, styles["Texto"]))
-    elementos.append(Spacer(1, 30))
+    elementos.append(Spacer(1, 40))
 
-    # --- Firma y pie de página (sello) en una sola línea ---
+    # --- Firma y pie de página (sello) en una sola línea, más grandes ---
     firma_path = "firma.png"
     pie_path = "pie_pagina.png"
     fila_imagenes = []
     if os.path.exists(firma_path):
-        fila_imagenes.append(Image(firma_path, width=80, height=40))
+        fila_imagenes.append(Image(firma_path, width=130, height=60))
     else:
-        fila_imagenes.append(Spacer(1, 40))
+        fila_imagenes.append(Spacer(1, 60))
     if os.path.exists(pie_path):
-        fila_imagenes.append(Image(pie_path, width=120, height=40))
+        fila_imagenes.append(Image(pie_path, width=180, height=60))
     else:
-        fila_imagenes.append(Spacer(1, 40))
-    tabla_firma = Table([fila_imagenes], colWidths=[200, 200])
+        fila_imagenes.append(Spacer(1, 60))
+    tabla_firma = Table([fila_imagenes], colWidths=[230, 230])
     tabla_firma.setStyle(TableStyle([
         ("ALIGN", (0,0), (-1,-1), "CENTER"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        # Si quieres borde, agrega: ("BOX", (0,0), (-1,-1), 0.5, colors.grey),
     ]))
     elementos.append(tabla_firma)
-    elementos.append(Spacer(1, 10))
+    elementos.append(Spacer(1, 18))
 
-    # --- Nombre y cargo ---
     elementos.append(Paragraph("Diego Cabrera Zanatta<br/>Coordinador de Gestión de Talento Humano", styles["Firma"]))
 
-    # --- Exportar PDF ---
     doc.build(elementos)
 
 # =====================
