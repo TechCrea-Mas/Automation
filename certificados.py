@@ -6,7 +6,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import os
+import os, glob
 
 def calcular_tiempo(inicio, fin):
     inicio = pd.to_datetime(inicio, dayfirst=True, errors="coerce")
@@ -46,14 +46,14 @@ def formato_fecha_actual():
 def generar_pdf(data, nombre_archivo):
     w, h = A4
     c = canvas.Canvas(nombre_archivo, pagesize=A4)
-
+    
     # Fondo institucional
     plantilla_path = "plantilla_certificado.jpg"
     if os.path.exists(plantilla_path):
         fondo = ImageReader(plantilla_path)
         c.drawImage(fondo, 0, 0, width=w, height=h)
 
-    # Estilos ReportLab
+    # Estilos para ReportLab
     styles = getSampleStyleSheet()
     styleTitulo = ParagraphStyle(
         'titulo',
@@ -88,7 +88,6 @@ def generar_pdf(data, nombre_archivo):
         data["Fecha de vinculación a Crea+ Perú:"],
         data["Fecha de desvinculación a Crea+ Perú:"]
     )
-
     texto = (
         "<b>CREA MÁS PERU</b> (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento a través de un voluntariado profesional.<br/><br/>"
         f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_vinculacion}</b> al <b>{fecha_desvinculacion}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, cumpliendo con {tiempo_voluntariado}.<br/><br/>"
@@ -96,11 +95,30 @@ def generar_pdf(data, nombre_archivo):
         "Se expide el presente certificado para los fines que se estimen convenientes.<br/><br/>"
         "Atentamente,"
     )
-    # El frame principal ocupa casi toda el área blanca central
-    frame = Frame(80, 220, w-160, 340, showBoundary=0)  # left, bottom, width, height
+    # Frame principal (área blanca central, no choca con firma/sello)
+    frame = Frame(80, 220, w-160, 330, showBoundary=0)  # left, bottom, width, height
     P = Paragraph(texto, styleNormal)
     frame.addFromList([P], c)
 
     # Firma, sello y pie de página YA están en la plantilla, no se agregan por código
 
     c.save()
+
+# ---------------------
+# Bucle principal
+# ---------------------
+lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
+if not lista_archivos:
+    raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
+ARCHIVO_FILTRADO = max(lista_archivos, key=os.path.getctime)
+
+df = pd.read_excel(ARCHIVO_FILTRADO)
+df_certificados = df[df["CERTIFICADO"] == "SI"]
+
+CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
+os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
+
+for _, row in df_certificados.iterrows():
+    nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
+    nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
+    generar_pdf(row, nombre_pdf)
