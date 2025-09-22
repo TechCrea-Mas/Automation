@@ -88,9 +88,9 @@ def generar_pdf(data, nombre_archivo):
         data["Fecha de vinculación a Crea+ Perú:"],
         data["Fecha de desvinculación a Crea+ Perú:"]
     )
-    texto = (
+      texto = (
         "<b>CREA MÁS PERU</b> (en adelante, Crea+) es una asociación civil sin fines de lucro compuesta por un equipo multidisciplinario de jóvenes, el cual busca transformar la sociedad a través de una transformación personal de beneficiarios y voluntarios, otorgando herramientas para el crecimiento a través de un voluntariado profesional.<br/><br/>"
-        f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_vinculacion}</b> al <b>{fecha_desvinculacion}</b> en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, cumpliendo con {tiempo_voluntariado}.<br/><br/>"
+        f"Mediante el presente, Crea+ deja constancia que <b>{data['NOMBRE_SUNAT']}</b> con DNI <b>{data['DNI']}</b>, participó como voluntaria/o desde el <b>{fecha_vinculacion}</b> al <b>{fecha_desvinculacion}</b> en el área <b>{data['¿En qué área o equipo participaste?']} en el rol de <b>{data['¿Qué rol desarrollaste dentro de la organización?']}</b>, cumpliendo con {tiempo_voluntariado}.<br/><br/>"
         f"Certificamos que <b>{data['NOMBRE_SUNAT']}</b> demostró responsabilidad y compromiso en el desarrollo de sus funciones.<br/><br/>"
         "Se expide el presente certificado para los fines que se estimen convenientes.<br/><br/>"
         "Atentamente,"
