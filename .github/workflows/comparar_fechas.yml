@@ -38,9 +38,9 @@ jobs:
         AUTOMATE_RCLONE: ${{ secrets.AUTOMATE_RCLONE }}
       run: |
         echo "$AUTOMATE_RCLONE" > rclone.conf
-        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Cierre de Voluntariado.xlsx" data/
-        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx" data/
-        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/DNI_OBS.xlsx" data/
+        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Cierre de rol.xlsx" data/
+        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/Forms Bienvenida al Creando.xlsx" data/
+        rclone --config rclone.conf copy "ondri_a.formularios:a.Formularios/2DNI_OBS.xlsx" data/
 
     # 7️⃣ Ejecutar Script 1 (merge y observaciones de fechas)
     - name: ▶️ Ejecutar Script 1
