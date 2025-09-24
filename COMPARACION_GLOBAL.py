@@ -14,13 +14,13 @@ DIR_SALIDA = "TEST_salida"
 Path(DIR_SALIDA).mkdir(exist_ok=True)
 
 # Archivos de entrada
-archivo_cierre = "data/Forms Cierre de Voluntariado.xlsx"
-archivo_bienvenida = "data/Te damos la bienvenida__Dirección de Cultura Organizacional y Talento Humano.xlsx"
+archivo_cierre = "data/¡Gracias por ser parte de Crea+Perú! 💙_Cierre de rol..xlsx"
+archivo_bienvenida = "data/Forms Bienvenida al Creando.xlsx"
 archivo_sunat = "data/DNI_OBS.xlsx"
 
 # Hojas y columnas relevantes
-hoja_cierre = "Sheet1"
-hoja_bienvenida = "data2025"
+hoja_cierre = "salida2025"
+hoja_bienvenida = "Bienvenida"
 hoja_sunat = "Sheet1"
 
 col_dni_original = "Documento de identidad (DNI/Pasaporte/Cédula):\n"
@@ -183,6 +183,7 @@ columnas_requeridas = [
     "Celular de contacto:",
     "Correo electrónico:",
     "¿Qué rol desarrollaste dentro de la organización?",
+    "¿En qué área o equipo participaste?"
     "Fecha de desvinculación a Crea+ Perú:",
     "Fecha de vinculación a Crea+ Perú:",
     "¿Cuál fue el motivo de tu salida?",
