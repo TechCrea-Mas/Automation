@@ -14,7 +14,7 @@ DIR_SALIDA = "TEST_salida"
 Path(DIR_SALIDA).mkdir(exist_ok=True)
 
 # Archivos de entrada
-archivo_cierre = "data/Cierre de rol..xlsx"
+archivo_cierre = "data/Cierre de rol.xlsx"
 archivo_bienvenida = "data/Forms Bienvenida al Creando.xlsx"
 archivo_sunat = "data/2DNI_OBS.xlsx"
 
