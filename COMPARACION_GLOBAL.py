@@ -16,7 +16,7 @@ Path(DIR_SALIDA).mkdir(exist_ok=True)
 # Archivos de entrada
 archivo_cierre = "data/Cierre de rol..xlsx"
 archivo_bienvenida = "data/Forms Bienvenida al Creando.xlsx"
-archivo_sunat = "data/DNI_OBS.xlsx"
+archivo_sunat = "data/2DNI_OBS.xlsx"
 
 # Hojas y columnas relevantes
 hoja_cierre = "salida2025"
