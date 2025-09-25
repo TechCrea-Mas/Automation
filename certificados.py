@@ -117,9 +117,6 @@ def generar_pdf(data, nombre_archivo):
 
     c.save()
 
-# ---------------------
-# Bucle principal
-# ---------------------
 lista_archivos = glob.glob("TEST_salida/DNI_resultado_comparacion_filtrado_*.xlsx")
 if not lista_archivos:
     raise FileNotFoundError("No se encontró ningún archivo filtrado en TEST_salida/")
@@ -132,9 +129,6 @@ CARPETA_CERTIFICADOS = "TEST_salida/certificados_pdf"
 os.makedirs(CARPETA_CERTIFICADOS, exist_ok=True)
 
 for _, row in df_certificados.iterrows():
-    nombre = formatear_nombre(row["NOMBRE_SUNAT"]).replace(" ", "_")
-    nombre = re.sub(r'[^\w\-]', '', nombre)  # elimina caracteres no válidos
-    dni = str(int(row["DNI"])) if not pd.isna(row["DNI"]) else "SIN_DNI"
-    nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{dni}.pdf'
+    nombre = row["NOMBRE_SUNAT"].replace(" ", "_")
+    nombre_pdf = f'{CARPETA_CERTIFICADOS}/certificado_{nombre}_{row["DNI"]}.pdf'
     generar_pdf(row, nombre_pdf)
-
