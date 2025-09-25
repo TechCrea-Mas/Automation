@@ -52,12 +52,31 @@ except Exception as e:
     print(f"❌ Error leyendo archivos de voluntariado/bienvenida: {e}")
     sys.exit(1)
 
-# Renombrar y normalizar columnas DNI
+# Renombrar columnas de DNI
 df_cierre = df_cierre.rename(columns={col_dni_original: "DNI"})
 df_bienvenida = df_bienvenida.rename(columns={col_dni_original.strip(): "DNI"})
 
-df_cierre["DNI"] = df_cierre["DNI"].astype(str).str.strip().str.zfill(8)
-df_bienvenida["DNI"] = df_bienvenida["DNI"].astype(str).str.strip().str.zfill(8)
+# ✅ Convertir DNI en ambos dataframes
+df_cierre["DNI"] = (
+    pd.to_numeric(df_cierre["DNI"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+    .astype(str).str.zfill(8)
+)
+
+df_bienvenida["DNI"] = (
+    pd.to_numeric(df_bienvenida["DNI"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+    .astype(str).str.zfill(8)
+)
+
+# ✅ Convertir columna de fecha en bienvenida a datetime
+df_bienvenida[col_fecha_bienvenida] = pd.to_datetime(
+    df_bienvenida[col_fecha_bienvenida],
+    errors="coerce",
+    dayfirst=True  # ajusta según el formato real de tu archivo
+)
 
 # Merge y comparación de fechas
 df_merged = df_cierre.merge(
@@ -92,13 +111,26 @@ if not os.path.exists(archivo_temp) or not os.path.exists(archivo_sunat):
 df_base = pd.read_excel(archivo_temp)
 df_sunat = pd.read_excel(archivo_sunat, sheet_name=hoja_sunat)
 
-# Normalizar nombres de columnas y DNI
+# Normalizar nombres de columnas
 df_base.columns = df_base.columns.str.strip().str.replace("\n", "")
 df_sunat.columns = df_sunat.columns.str.strip().str.replace("\n", "")
 
-df_base["DNI"] = df_base["DNI"].astype(str).str.zfill(8)
-df_sunat["DNI"] = df_sunat["DNI"].astype(str).str.zfill(8)
+# ✅ Convertir DNI en ambos
+df_base["DNI"] = (
+    pd.to_numeric(df_base["DNI"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+    .astype(str).str.zfill(8)
+)
 
+df_sunat["DNI"] = (
+    pd.to_numeric(df_sunat["DNI"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+    .astype(str).str.zfill(8)
+)
+
+# Merge
 cols_sunat = [c for c in df_sunat.columns if c not in df_base.columns or c == "DNI"]
 df_final = df_base.merge(
     df_sunat[cols_sunat],
@@ -149,7 +181,7 @@ def comparar_nombres(row):
 df_final["OBS_NOMBRE_SUNAT"] = df_final.apply(comparar_nombres, axis=1)
 nuevas_columnas.append("OBS_NOMBRE_SUNAT")
 
-# === COLUMNA CERTIFICADO SEGÚN CONDICIÓN DE COINCIDEN EN AMBAS OBSERVACIONES ===
+# CERTIFICADO
 def certificado_condicion(row):
     if row.get("OBS_FECHA_INICIO") == "COINCIDEN" and row.get("OBS_NOMBRE_SUNAT") == "COINCIDEN":
         return "SI"
@@ -159,18 +191,17 @@ def certificado_condicion(row):
 df_final["CERTIFICADO"] = df_final.apply(certificado_condicion, axis=1)
 nuevas_columnas.append("CERTIFICADO")
 
-# === REORDENAR COLUMNAS: NUEVAS COLUMNAS AL FINAL EN ORDEN ===
+# Reordenar columnas
 otras = [c for c in df_final.columns if c not in nuevas_columnas]
 df_final = df_final[otras + nuevas_columnas]
 
-# === GUARDAR RESULTADO FINAL (TODOS LOS REGISTROS) ===
+# Guardar resultado final
 fecha_archivo = datetime.now().strftime("%Y-%m-%d_%H-%M")
 archivo_resultado = f"{DIR_SALIDA}/DNI_resultado_comparacion_{fecha_archivo}.xlsx"
 df_final.to_excel(archivo_resultado, index=False)
 print(f"✅ Archivo final comparado guardado en: {archivo_resultado}")
 
-# === FILTRAR SOLO LAS COLUMNAS SOLICITADAS Y GUARDAR OTRA DESCARGA ===
-# Las columnas requeridas
+# Guardar archivo filtrado
 columnas_requeridas = [
     "Id",
     "Hora de inicio",
@@ -188,7 +219,7 @@ columnas_requeridas = [
     "Fecha de vinculación a Crea+ Perú:",
     "¿Cuál fue el motivo de tu salida?",
     "Capacitación inicial",
-    "Acompañamiento y apoyo  de los líderes durante el voluntariado",
+    "Acompañamiento y apoyo  de los líderes durante el voluntariado",
     "Claridad en las tareas asignadas",
     "Recursos y herramientas disponibles",
     "Ambiente de trabajo",
@@ -209,7 +240,6 @@ columnas_requeridas = [
     "CERTIFICADO"
 ]
 
-# Selecciona solo las columnas que existan en el resultado
 columnas_existentes = [col for col in columnas_requeridas if col in df_final.columns]
 df_filtrado = df_final[columnas_existentes]
 
