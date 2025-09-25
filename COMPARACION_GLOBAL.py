@@ -183,7 +183,7 @@ columnas_requeridas = [
     "Celular de contacto:",
     "Correo electrónico:",
     "¿Qué rol desarrollaste dentro de la organización?",
-    "¿En qué área o equipo participaste?"
+    "¿En qué área o equipo participaste?",
     "Fecha de desvinculación a Crea+ Perú:",
     "Fecha de vinculación a Crea+ Perú:",
     "¿Cuál fue el motivo de tu salida?",
